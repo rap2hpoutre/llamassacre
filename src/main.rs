@@ -68,6 +68,14 @@ impl Assets {
     }
 }
 
+// Controls
+#[derive(Debug)]
+struct Controls {
+    up: event::Keycode,
+    left: event::Keycode,
+    right: event::Keycode,
+}
+
 
 // Actors
 #[derive(Debug)]
@@ -83,10 +91,12 @@ struct Actor {
     cbox_size: Vector2<f64>,
     max_velocity: Vector2<f64>,
     velocity: Vector2<f64>,
+    input_axis: Vector2<f64>,
+    controls: Controls,
 }
 
 impl Actor {
-    fn new_player() -> Actor {
+    fn new_player(controls: Controls) -> Actor {
         Actor {
             tag: ActorType::Player,
             position: Vector2::new(0., 0.),
@@ -94,21 +104,8 @@ impl Actor {
             cbox_size: Vector2::new(0.025, 0.025),
             max_velocity: Vector2::new(0.2, 0.7),
             velocity: Vector2::new(0., 0.),
-        }
-    }
-}
-
-#[derive(Debug)]
-struct InputState {
-    xaxis: f64,
-    yaxis: f64,
-}
-
-impl Default for InputState {
-    fn default() -> Self {
-        InputState {
-            xaxis: 0.0,
-            yaxis: 0.0,
+            input_axis: Vector2::new(0., 0.),
+            controls: controls,
         }
     }
 }
@@ -117,8 +114,7 @@ impl Default for InputState {
 struct MainState {
     screen: Screen,
     assets: Assets,
-    player1: Actor,
-    input: InputState,
+    players: [Actor; 2],
 }
 
 impl MainState {
@@ -130,9 +126,17 @@ impl MainState {
         let assets = Assets::new(ctx)?;
         let s = MainState {
             assets: assets,
-            input: InputState::default(),
             screen: Screen::new(),
-            player1: Actor::new_player(),
+            players: [Actor::new_player(Controls {
+                                            up: event::Keycode::Up,
+                                            left: event::Keycode::Left,
+                                            right: event::Keycode::Right,
+                                        }),
+                      Actor::new_player(Controls {
+                                            up: event::Keycode::E,
+                                            left: event::Keycode::S,
+                                            right: event::Keycode::F,
+                                        })],
         };
         Ok(s)
     }
@@ -145,60 +149,60 @@ impl event::EventHandler for MainState {
             return Ok(());
         }
         let seconds = 1.0 / (Self::DESIRED_FPS as f64);
+        for player in &mut self.players {
+            player.velocity.x = seconds * player.max_velocity.x * player.input_axis.x;
 
-        self.player1.velocity.x = seconds * self.player1.max_velocity.x * self.input.xaxis;
+            if self.screen
+                   .position_to_pixel(Vector2::new(0., Self::GROUND_Y))
+                   .y as u32 >
+               self.screen.position_to_pixel(player.position).y as u32 {
+                player.velocity.y -= seconds * player.max_velocity.y / Self::GRAVITY_MAGIC_NUMBER;
+            } else {
+                player.velocity.y = seconds * player.max_velocity.y * player.input_axis.y;
+            }
 
-        if self.screen
-               .position_to_pixel(Vector2::new(0., Self::GROUND_Y))
-               .y as u32 >
-           self.screen.position_to_pixel(self.player1.position).y as u32 {
-            self.player1.velocity.y -= seconds * self.player1.max_velocity.y / Self::GRAVITY_MAGIC_NUMBER;
-        } else {
-            self.player1.velocity.y = seconds * self.player1.max_velocity.y * self.input.yaxis;
+            player.position.x += player.velocity.x;
+            player.position.y += player.velocity.y;
         }
-
-        self.player1.position.x += self.player1.velocity.x;
-        self.player1.position.y += self.player1.velocity.y;
 
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx);
-        draw_actor(ctx, &self.player1, &mut self.assets, &self.screen)?;
+        draw_actor(ctx, &self.players[0], &mut self.assets, &self.screen)?;
+        draw_actor(ctx, &self.players[1], &mut self.assets, &self.screen)?;
         graphics::present(ctx);
         timer::sleep(Duration::from_secs(0));
         Ok(())
     }
 
-
-    // Handle key events.  These just map keyboard events
-    // and alter our input state appropriately.
     fn key_down_event(&mut self, keycode: event::Keycode, _keymod: event::Mod, _repeat: bool) {
-        match keycode {
-            event::Keycode::Up => {
-                self.input.yaxis = 1.0;
+        for player in &mut self.players {
+            if keycode == player.controls.up {
+                player.input_axis.y = 1.0;
+            } else if keycode == player.controls.left {
+                player.input_axis.x = -1.0;
+            } else if keycode == player.controls.right {
+                player.input_axis.x = 1.0;
             }
-            event::Keycode::Left => {
-                self.input.xaxis = -1.0;
-            }
-            event::Keycode::Right => {
-                self.input.xaxis = 1.0;
-            }
-            _ => (), // Do nothing
         }
     }
 
 
     fn key_up_event(&mut self, keycode: event::Keycode, _keymod: event::Mod, _repeat: bool) {
-        match keycode {
-            event::Keycode::Up => {
-                self.input.yaxis = 0.0;
+        for player in &mut self.players {
+            if keycode == player.controls.up {
+                player.input_axis.y = 0.0;
+            } else if keycode == player.controls.left {
+                if player.input_axis.x < 0. {
+                    player.input_axis.x = 0.0;
+                }
+            } else if keycode == player.controls.right {
+                if player.input_axis.x > 0. {
+                    player.input_axis.x = 0.0;
+                }
             }
-            event::Keycode::Left | event::Keycode::Right => {
-                self.input.xaxis = 0.0;
-            }
-            _ => (), // Do nothing
         }
     }
 }
