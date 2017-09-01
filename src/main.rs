@@ -1,5 +1,6 @@
 extern crate ggez;
 extern crate cgmath;
+extern crate rand;
 use ggez::conf;
 use ggez::event;
 use ggez::{Context, GameResult};
@@ -7,6 +8,7 @@ use ggez::graphics;
 use ggez::timer;
 use std::time::Duration;
 use cgmath::Vector2;
+use cgmath::MetricSpace;
 
 // Screen
 struct Screen {
@@ -99,7 +101,7 @@ impl Actor {
     fn new_player(controls: Controls) -> Actor {
         Actor {
             tag: ActorType::Player,
-            position: Vector2::new(0., 0.),
+            position: Vector2::new(rand::random::<f64>() - 0.5, 0.),
             size: Vector2::new(0.05, 0.05),
             cbox_size: Vector2::new(0.025, 0.025),
             max_velocity: Vector2::new(0.2, 0.7),
@@ -149,6 +151,8 @@ impl event::EventHandler for MainState {
             return Ok(());
         }
         let seconds = 1.0 / (Self::DESIRED_FPS as f64);
+
+        // Move players
         for player in &mut self.players {
             player.velocity.x = seconds * player.max_velocity.x * player.input_axis.x;
 
@@ -163,6 +167,28 @@ impl event::EventHandler for MainState {
 
             player.position.x += player.velocity.x;
             player.position.y += player.velocity.y;
+
+            if player.position.y < Self::GROUND_Y {
+                player.position.y = Self::GROUND_Y;
+            }
+
+        }
+
+        for i in 0..self.players.len() {
+            let n = i + 1;
+            for j in n..self.players.len() {
+                // Check collision.
+                if self.players[i]
+                       .position
+                       .distance(self.players[j].position) <
+                   self.players[i].cbox_size.x {
+                       if self.players[i].position.y > self.players[j].position.y && self.players[i].velocity.y < 0. {
+                            println!("{} killed {}", i, j);
+                       } else if self.players[j].position.y > self.players[i].position.y && self.players[j].velocity.y < 0. {
+                            println!("{} killed {}", j, i);
+                       }
+                }
+            }
         }
 
         Ok(())
@@ -188,7 +214,6 @@ impl event::EventHandler for MainState {
             }
         }
     }
-
 
     fn key_up_event(&mut self, keycode: event::Keycode, _keymod: event::Mod, _repeat: bool) {
         for player in &mut self.players {
