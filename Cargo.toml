@@ -1,0 +1,9 @@
+[package]
+name = "aknit"
+version = "0.1.0"
+authors = ["rap2h <raphaelht@gmail.com>"]
+
+[dependencies]
+ggez = "0.3"
+cgmath = "0.15.0"
+rand = "0.3.16"
