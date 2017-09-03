@@ -9,114 +9,23 @@ use ggez::timer;
 use std::time::Duration;
 use cgmath::Vector2;
 use cgmath::MetricSpace;
+use controls::Controls;
+use display::Screen;
+use assets::Assets;
+use player::{Player, PlayerType};
 
-// Screen
-struct Screen {
-    view_width: u32,
-    view_height: u32,
-}
-
-impl Screen {
-    const WIDTH: u32 = 320;
-    const HEIGHT: u32 = 200;
-    const RATIO: (u32, u32) = (8, 5);
-
-    fn new() -> Screen {
-        let cell_by_width = Screen::WIDTH as f32 / Screen::RATIO.0 as f32;
-        let cell_by_height = Screen::HEIGHT as f32 / Screen::RATIO.1 as f32;
-        let cell_size = if cell_by_width > cell_by_height {
-            cell_by_width
-        } else {
-            cell_by_width
-        };
-        let view_width = (cell_size * Screen::RATIO.0 as f32) as u32;
-        let view_height = (cell_size * Screen::RATIO.1 as f32) as u32;
-        println!("View size: {} {}", view_width, view_height);
-        Screen {
-            view_width: view_width,
-            view_height: view_height,
-        }
-    }
-
-    fn position_to_pixel(&self, postion: Vector2<f64>) -> Vector2<f64> {
-        Vector2::new(self.view_width as f64 * postion.x + self.view_width as f64 / 2.,
-                     self.view_height as f64 * -postion.y + self.view_height as f64 / 2.)
-
-    }
-
-    fn size_to_pixel(&self, size: Vector2<f64>) -> Vector2<f64> {
-        Vector2::new(self.view_width as f64 * size.x,
-                     self.view_height as f64 * size.y)
-
-    }
-}
-
-// Assets
-struct Assets {
-    player_image: graphics::Image,
-}
-
-impl Assets {
-    fn new(ctx: &mut Context) -> GameResult<Assets> {
-        let color = graphics::Color::new(0.5, 0., 0., 1.);
-        let s = Assets { player_image: graphics::Image::solid(ctx, 22, color)? };
-        Ok(s)
-    }
-
-    fn actor_image(&mut self, actor: &Actor) -> &mut graphics::Image {
-        match actor.tag {
-            ActorType::Player => &mut self.player_image,
-        }
-    }
-}
-
-// Controls
-#[derive(Debug)]
-struct Controls {
-    up: event::Keycode,
-    left: event::Keycode,
-    right: event::Keycode,
-}
-
-
-// Actors
-#[derive(Debug)]
-enum ActorType {
-    Player,
-}
-
-#[derive(Debug)]
-struct Actor {
-    tag: ActorType,
-    position: Vector2<f64>,
-    size: Vector2<f64>,
-    cbox_size: Vector2<f64>,
-    max_velocity: Vector2<f64>,
-    velocity: Vector2<f64>,
-    input_axis: Vector2<f64>,
-    controls: Controls,
-}
-
-impl Actor {
-    fn new_player(controls: Controls) -> Actor {
-        Actor {
-            tag: ActorType::Player,
-            position: Vector2::new(rand::random::<f64>() - 0.5, 0.),
-            size: Vector2::new(0.05, 0.05),
-            cbox_size: Vector2::new(0.025, 0.025),
-            max_velocity: Vector2::new(0.2, 0.7),
-            velocity: Vector2::new(0., 0.),
-            input_axis: Vector2::new(0., 0.),
-            controls: controls,
-        }
-    }
-}
+mod controls;
+mod display;
+mod assets;
+mod player;
+mod animation;
 
 // Main state
 struct MainState {
     screen: Screen,
     assets: Assets,
-    players: [Actor; 2],
+    players: [Player; 2],
+    text_scores: [graphics::Text; 2],
 }
 
 impl MainState {
@@ -126,19 +35,27 @@ impl MainState {
 
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let assets = Assets::new(ctx)?;
+        let text_scores = [graphics::Text::new(ctx, "0", &assets.font)?,
+                           graphics::Text::new(ctx, "0", &assets.font)?];
+        let player1 = Player::new(Controls {
+                                      up: event::Keycode::Up,
+                                      left: event::Keycode::Left,
+                                      right: event::Keycode::Right,
+                                  },
+                                  PlayerType::Player1,
+                                  assets::player1_animation(ctx)?);
+        let player2 = Player::new(Controls {
+                                      up: event::Keycode::E,
+                                      left: event::Keycode::S,
+                                      right: event::Keycode::F,
+                                  },
+                                  PlayerType::Player2,
+                                  assets::player2_animation(ctx)?);
         let s = MainState {
             assets: assets,
+            text_scores: text_scores,
             screen: Screen::new(),
-            players: [Actor::new_player(Controls {
-                                            up: event::Keycode::Up,
-                                            left: event::Keycode::Left,
-                                            right: event::Keycode::Right,
-                                        }),
-                      Actor::new_player(Controls {
-                                            up: event::Keycode::E,
-                                            left: event::Keycode::S,
-                                            right: event::Keycode::F,
-                                        })],
+            players: [player1, player2],
         };
         Ok(s)
     }
@@ -171,7 +88,6 @@ impl event::EventHandler for MainState {
             if player.position.y < Self::GROUND_Y {
                 player.position.y = Self::GROUND_Y;
             }
-
         }
 
         for i in 0..self.players.len() {
@@ -182,11 +98,17 @@ impl event::EventHandler for MainState {
                        .position
                        .distance(self.players[j].position) <
                    self.players[i].cbox_size.x {
-                       if self.players[i].position.y > self.players[j].position.y && self.players[i].velocity.y < 0. {
-                            println!("{} killed {}", i, j);
-                       } else if self.players[j].position.y > self.players[i].position.y && self.players[j].velocity.y < 0. {
-                            println!("{} killed {}", j, i);
-                       }
+                    if self.players[i].position.y > self.players[j].position.y &&
+                       self.players[i].velocity.y < 0. {
+                        kill(&mut self.players, i, j);
+                        self.text_scores[i] =
+                            score_text(ctx, self.players[i].score, &mut self.assets)?;
+                    } else if self.players[j].position.y > self.players[i].position.y &&
+                              self.players[j].velocity.y < 0. {
+                        kill(&mut self.players, j, i);
+                        self.text_scores[j] =
+                            score_text(ctx, self.players[j].score, &mut self.assets)?;
+                    }
                 }
             }
         }
@@ -196,8 +118,16 @@ impl event::EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx);
-        draw_actor(ctx, &self.players[0], &mut self.assets, &self.screen)?;
-        draw_actor(ctx, &self.players[1], &mut self.assets, &self.screen)?;
+
+        for i in 0..self.players.len() {
+            draw_player(ctx, &mut self.players[i], &self.screen)?;
+            let text_pos = graphics::Point {
+                x: 20.0,
+                y: i as f32 * 24.0 + 10.0,
+            };
+            graphics::draw(ctx, &self.text_scores[i], text_pos, 0.0)?;
+        }
+
         graphics::present(ctx);
         timer::sleep(Duration::from_secs(0));
         Ok(())
@@ -232,25 +162,35 @@ impl event::EventHandler for MainState {
     }
 }
 
-fn draw_actor(ctx: &mut Context,
-              actor: &Actor,
-              assets: &mut Assets,
-              screen: &Screen)
-              -> GameResult<()> {
-    let pixel_position = screen.position_to_pixel(actor.position);
-    let size = screen.size_to_pixel(actor.size);
-    let actor_image = assets.actor_image(actor);
+fn kill(players: &mut [Player; 2], killer_index: usize, victim_index: usize) {
+    players[killer_index].score += 1;
+    players[killer_index].velocity.y *= -0.7;
+    players[victim_index].position = player::random_position();
+    println!("{} killed {}", killer_index, victim_index);
+}
+
+fn score_text(ctx: &mut Context, score: u32, assets: &mut Assets) -> GameResult<graphics::Text> {
+    graphics::Text::new(ctx, &format!("{}", score), &assets.font)
+}
+
+fn draw_player(ctx: &mut Context,
+               player: &mut Player,
+               screen: &Screen)
+               -> GameResult<()> {
+    let pixel_position = screen.position_to_pixel(player.position);
+    let size = screen.size_to_pixel(player.size);
+    let player_image = animation::player_image(player);
 
     graphics::draw_ex(ctx,
-                      actor_image,
+                      player_image,
                       graphics::DrawParam {
                           dest: graphics::Point {
                               x: pixel_position.x as f32,
                               y: pixel_position.y as f32,
                           },
                           scale: graphics::Point {
-                              x: size.x as f32 / actor_image.width() as f32,
-                              y: size.x as f32 / actor_image.height() as f32,
+                              x: size.x as f32 / player_image.width() as f32,
+                              y: size.x as f32 / player_image.height() as f32,
                           },
                           ..Default::default()
                       })?;
