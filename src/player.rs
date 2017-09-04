@@ -1,7 +1,7 @@
 use cgmath::Vector2;
 use controls::Controls;
-use rand;
 use animation::PlayerAnimation;
+use helpers::random_position;
 
 // Players
 #[derive(Debug)]
@@ -39,8 +39,4 @@ impl Player {
             animation: animation,
         }
     }
-}
-
-pub fn random_position() -> Vector2<f64> {
-    Vector2::new(rand::random::<f64>() - 0.5, 0.)
 }

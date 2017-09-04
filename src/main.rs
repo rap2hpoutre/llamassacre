@@ -13,12 +13,16 @@ use controls::Controls;
 use display::Screen;
 use assets::Assets;
 use player::{Player, PlayerType};
+use particles::Blood;
+use helpers::*;
 
 mod controls;
 mod display;
 mod assets;
 mod player;
 mod animation;
+mod particles;
+mod helpers;
 
 // Main state
 struct MainState {
@@ -26,6 +30,7 @@ struct MainState {
     assets: Assets,
     players: [Player; 2],
     text_scores: [graphics::Text; 2],
+    blood_particles: Vec<Blood>,
 }
 
 impl MainState {
@@ -43,19 +48,20 @@ impl MainState {
                                       right: event::Keycode::Right,
                                   },
                                   PlayerType::Player1,
-                                  assets::player1_animation(ctx)?);
+                                  player1_animation(ctx)?);
         let player2 = Player::new(Controls {
                                       up: event::Keycode::E,
                                       left: event::Keycode::S,
                                       right: event::Keycode::F,
                                   },
                                   PlayerType::Player2,
-                                  assets::player2_animation(ctx)?);
+                                  player2_animation(ctx)?);
         let s = MainState {
             assets: assets,
             text_scores: text_scores,
             screen: Screen::new(),
             players: [player1, player2],
+            blood_particles: vec![],
         };
         Ok(s)
     }
@@ -69,50 +75,75 @@ impl event::EventHandler for MainState {
         }
         let seconds = 1.0 / (Self::DESIRED_FPS as f64);
 
-        // Move players
-        for player in &mut self.players {
-            player.velocity.x = seconds * player.max_velocity.x * player.input_axis.x;
+        // Update players position
+        {
+            for player in &mut self.players {
+                player.velocity.x = seconds * player.max_velocity.x * player.input_axis.x;
 
-            if self.screen
-                   .position_to_pixel(Vector2::new(0., Self::GROUND_Y))
-                   .y as u32 >
-               self.screen.position_to_pixel(player.position).y as u32 {
-                player.velocity.y -= seconds * player.max_velocity.y / Self::GRAVITY_MAGIC_NUMBER;
-            } else {
-                player.velocity.y = seconds * player.max_velocity.y * player.input_axis.y;
-            }
+                if self.screen
+                       .position_to_pixel(Vector2::new(0., Self::GROUND_Y))
+                       .y as u32 >
+                   self.screen.position_to_pixel(player.position).y as u32 {
+                    player.velocity.y -= seconds * player.max_velocity.y /
+                                         Self::GRAVITY_MAGIC_NUMBER;
+                } else {
+                    player.velocity.y = seconds * player.max_velocity.y * player.input_axis.y;
+                }
 
-            player.position.x += player.velocity.x;
-            player.position.y += player.velocity.y;
+                player.position.x += player.velocity.x;
+                player.position.y += player.velocity.y;
 
-            if player.position.y < Self::GROUND_Y {
-                player.position.y = Self::GROUND_Y;
-            }
-        }
-
-        for i in 0..self.players.len() {
-            let n = i + 1;
-            for j in n..self.players.len() {
-                // Check collision.
-                if self.players[i]
-                       .position
-                       .distance(self.players[j].position) <
-                   self.players[i].cbox_size.x {
-                    if self.players[i].position.y > self.players[j].position.y &&
-                       self.players[i].velocity.y < 0. {
-                        kill(&mut self.players, i, j);
-                        self.text_scores[i] =
-                            score_text(ctx, self.players[i].score, &mut self.assets)?;
-                    } else if self.players[j].position.y > self.players[i].position.y &&
-                              self.players[j].velocity.y < 0. {
-                        kill(&mut self.players, j, i);
-                        self.text_scores[j] =
-                            score_text(ctx, self.players[j].score, &mut self.assets)?;
-                    }
+                if player.position.y < Self::GROUND_Y {
+                    player.position.y = Self::GROUND_Y;
                 }
             }
         }
 
+        // Particles
+        {
+            self.blood_particles
+                .retain(|blood_particle| blood_particle.position.y < 0.5);
+            for blood_particle in &mut self.blood_particles {
+                blood_particle.velocity.y -= seconds * 1.2 / Self::GRAVITY_MAGIC_NUMBER;
+                blood_particle.position.x += blood_particle.velocity.x;
+                blood_particle.position.y += blood_particle.velocity.y;
+
+            }
+        }
+
+        // Collision
+        {
+            for i in 0..self.players.len() {
+                let n = i + 1;
+                for j in n..self.players.len() {
+                    let distance = self.players[i]
+                        .position
+                        .distance(self.players[j].position);
+                    if distance < self.players[i].cbox_size.x {
+                        let pos_y_i = self.players[i].position.y;
+                        let pos_y_j = self.players[j].position.y;
+                        let (frag, killer, victim) =
+                            if pos_y_i > pos_y_j && self.players[i].velocity.y < 0. {
+                                (true, Some(i), Some(j))
+                            } else if pos_y_j > pos_y_i && self.players[j].velocity.y < 0. {
+                                (true, Some(j), Some(i))
+                            } else {
+                                (false, None, None)
+                            };
+                        if frag {
+                            let (killer, victim) = (killer.unwrap(), victim.unwrap());
+                            for _ in 0..7 {
+                                self.blood_particles
+                                    .push(random_blood_particle(self.players[victim].position));
+                            }
+                            kill(&mut self.players, killer, victim);
+                            self.text_scores[killer] =
+                                score_text(ctx, self.players[killer].score, &mut self.assets)?;
+                        }
+                    }
+                }
+            }
+        }
         Ok(())
     }
 
@@ -126,6 +157,13 @@ impl event::EventHandler for MainState {
                 y: i as f32 * 24.0 + 10.0,
             };
             graphics::draw(ctx, &self.text_scores[i], text_pos, 0.0)?;
+        }
+
+        for i in 0..self.blood_particles.len() {
+            draw_blood(ctx,
+                       &mut self.blood_particles[i],
+                       &self.screen,
+                       &mut self.assets)?;
         }
 
         graphics::present(ctx);
@@ -160,41 +198,6 @@ impl event::EventHandler for MainState {
             }
         }
     }
-}
-
-fn kill(players: &mut [Player; 2], killer_index: usize, victim_index: usize) {
-    players[killer_index].score += 1;
-    players[killer_index].velocity.y *= -0.7;
-    players[victim_index].position = player::random_position();
-    println!("{} killed {}", killer_index, victim_index);
-}
-
-fn score_text(ctx: &mut Context, score: u32, assets: &mut Assets) -> GameResult<graphics::Text> {
-    graphics::Text::new(ctx, &format!("{}", score), &assets.font)
-}
-
-fn draw_player(ctx: &mut Context,
-               player: &mut Player,
-               screen: &Screen)
-               -> GameResult<()> {
-    let pixel_position = screen.position_to_pixel(player.position);
-    let size = screen.size_to_pixel(player.size);
-    let player_image = animation::player_image(player);
-
-    graphics::draw_ex(ctx,
-                      player_image,
-                      graphics::DrawParam {
-                          dest: graphics::Point {
-                              x: pixel_position.x as f32,
-                              y: pixel_position.y as f32,
-                          },
-                          scale: graphics::Point {
-                              x: size.x as f32 / player_image.width() as f32,
-                              y: size.x as f32 / player_image.height() as f32,
-                          },
-                          ..Default::default()
-                      })?;
-    Ok(())
 }
 
 
