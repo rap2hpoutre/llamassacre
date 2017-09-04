@@ -101,14 +101,13 @@ impl event::EventHandler for MainState {
 
         // Particles
         {
-            self.blood_particles
-                .retain(|blood_particle| blood_particle.position.y < 0.5);
             for blood_particle in &mut self.blood_particles {
                 blood_particle.velocity.y -= seconds * 1.2 / Self::GRAVITY_MAGIC_NUMBER;
                 blood_particle.position.x += blood_particle.velocity.x;
                 blood_particle.position.y += blood_particle.velocity.y;
-
             }
+            self.blood_particles
+                .retain(|blood_particle| blood_particle.position.y > -0.5);
         }
 
         // Collision
@@ -149,6 +148,14 @@ impl event::EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx);
+
+        // FPS
+        {
+            let t = timer::get_fps(ctx);
+            let text = graphics::Text::new(ctx, &format!("FPS: {}", t as u32), &self.assets.font)?;
+            let text_pos = graphics::Point { x: 200.0, y: 10.0 };
+            graphics::draw(ctx, &text, text_pos, 0.0)?;
+        }
 
         for i in 0..self.players.len() {
             draw_player(ctx, &mut self.players[i], &self.screen)?;
