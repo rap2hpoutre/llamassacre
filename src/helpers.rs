@@ -1,7 +1,7 @@
 use ggez::graphics;
 use ggez::{Context, GameResult};
 use cgmath::Vector2;
-use animation::{PlayerAnimation, PlayerAnimationStatus};
+use animation::{PlayerAnimation, PlayerAnimationStatus, LeftRightImage};
 use player::Player;
 use assets::Assets;
 use display::Screen;
@@ -10,27 +10,37 @@ use rand;
 
 
 pub fn player1_animation(ctx: &mut Context) -> GameResult<PlayerAnimation> {
-    player_animation(ctx)
-}
-
-pub fn player2_animation(ctx: &mut Context) -> GameResult<PlayerAnimation> {
-    player_animation(ctx)
-}
-
-fn player_animation(ctx: &mut Context) -> GameResult<PlayerAnimation> {
-    // let mut duck_s = graphics::Image::new(ctx, "/duck-s.png")?;
-    // duck_s.set_filter(graphics::FilterMode::Nearest);
     let r = PlayerAnimation {
         walk: [
-            graphics::Image::solid(ctx, 22, graphics::Color::new(1., 0., 0., 1.))?,
-            graphics::Image::solid(ctx, 22, graphics::Color::new(1., 1., 0., 1.))?,
+            LeftRightImage { left: sprite(ctx, "/sprite_02.png")?, right: sprite(ctx, "/sprite_07.png")? },
+            LeftRightImage { left: sprite(ctx, "/sprite_03.png")?, right: sprite(ctx, "/sprite_08.png")? },
         ],
-        jump: graphics::Image::solid(ctx, 22, graphics::Color::new(1., 0., 1., 1.))?,
-        fall: graphics::Image::solid(ctx, 22, graphics::Color::new(0., 1., 1., 1.))?,
-        stand: graphics::Image::solid(ctx, 22, graphics::Color::new(1., 1., 1., 1.))?,      
+        jump: LeftRightImage { left: sprite(ctx, "/sprite_04.png")?, right: sprite(ctx, "/sprite_09.png")? },
+        fall: LeftRightImage { left: sprite(ctx, "/sprite_05.png")?, right: sprite(ctx, "/sprite_10.png")? },
+        stand: LeftRightImage { left: sprite(ctx, "/sprite_01.png")?, right: sprite(ctx, "/sprite_06.png")? },
         time: 0. 
     };
     Ok(r)
+}
+
+pub fn player2_animation(ctx: &mut Context) -> GameResult<PlayerAnimation> {
+    let r = PlayerAnimation {
+        walk: [
+            LeftRightImage { left: sprite(ctx, "/sprite_13.png")?, right: sprite(ctx, "/sprite_18.png")? },
+            LeftRightImage { left: sprite(ctx, "/sprite_14.png")?, right: sprite(ctx, "/sprite_19.png")? },
+        ],
+        jump: LeftRightImage { left: sprite(ctx, "/sprite_15.png")?, right: sprite(ctx, "/sprite_20.png")? },
+        fall: LeftRightImage { left: sprite(ctx, "/sprite_16.png")?, right: sprite(ctx, "/sprite_21.png")? },
+        stand: LeftRightImage { left: sprite(ctx, "/sprite_12.png")?, right: sprite(ctx, "/sprite_17.png")? },
+        time: 0. 
+    };
+    Ok(r)
+}
+
+fn sprite(ctx: &mut Context, s: &str) -> GameResult<graphics::Image> {
+    let mut llama_s = graphics::Image::new(ctx, s)?;
+    llama_s.set_filter(graphics::FilterMode::Nearest);
+    Ok(llama_s)
 }
 
 fn player_image(player: &mut Player) -> &graphics::Image {
@@ -45,25 +55,25 @@ fn player_image(player: &mut Player) -> &graphics::Image {
     };
     match status {
         PlayerAnimationStatus::Walking => {
-                player.animation.time += 0.017; // TODO
+                player.animation.time += 1. / 60.; // TODO
                 if player.animation.time > PlayerAnimation::WALK_ANIMATION_CYCLE * 2. {
                     player.animation.time = 0.;
-                    &player.animation.walk[0]
+                    &player.animation.walk[0].face(&player.facing)
                 } else if player.animation.time > PlayerAnimation::WALK_ANIMATION_CYCLE {
-                    &player.animation.walk[0]
+                    &player.animation.walk[0].face(&player.facing)
                 } else {
-                    &player.animation.walk[1]
+                    &player.animation.walk[1].face(&player.facing)
                 }
             },
-        PlayerAnimationStatus::Standing => &player.animation.stand,
-        PlayerAnimationStatus::Jumping => &player.animation.jump,
-        PlayerAnimationStatus::Falling => &player.animation.fall, 
+        PlayerAnimationStatus::Standing => &player.animation.stand.face(&player.facing),
+        PlayerAnimationStatus::Jumping => &player.animation.jump.face(&player.facing),
+        PlayerAnimationStatus::Falling => &player.animation.fall.face(&player.facing), 
     }
 }
 
 pub fn kill(players: &mut [Player; 2], killer_index: usize, victim_index: usize) {
     players[killer_index].score += 1;
-    players[killer_index].velocity.y *= -0.7;
+    players[killer_index].velocity.y *= -1.0;
     players[victim_index].position = random_position();
     println!("{} killed {}", killer_index, victim_index);
 }

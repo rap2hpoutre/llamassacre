@@ -7,8 +7,8 @@ pub struct Screen {
 }
 
 impl Screen {
-    pub const WIDTH: u32 = 320;
-    pub const HEIGHT: u32 = 200;
+    pub const WIDTH: u32 = 640;
+    pub const HEIGHT: u32 = 400;
     const RATIO: (u32, u32) = (8, 5);
 
     pub fn new() -> Screen {

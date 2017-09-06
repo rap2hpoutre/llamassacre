@@ -12,7 +12,8 @@ use cgmath::MetricSpace;
 use controls::Controls;
 use display::Screen;
 use assets::Assets;
-use player::{Player, PlayerType};
+use ui::Fps;
+use player::{Player, PlayerType, Facing};
 use particles::Blood;
 use helpers::*;
 
@@ -23,6 +24,7 @@ mod player;
 mod animation;
 mod particles;
 mod helpers;
+mod ui;
 
 // Main state
 struct MainState {
@@ -31,6 +33,7 @@ struct MainState {
     players: [Player; 2],
     text_scores: [graphics::Text; 2],
     blood_particles: Vec<Blood>,
+    fps: Fps
 }
 
 impl MainState {
@@ -42,6 +45,10 @@ impl MainState {
         let assets = Assets::new(ctx)?;
         let text_scores = [graphics::Text::new(ctx, "0", &assets.font)?,
                            graphics::Text::new(ctx, "0", &assets.font)?];
+        let fps = Fps {
+            text: graphics::Text::new(ctx, "FPS:", &assets.font)?,
+            cooldown: 1.0,
+        };
         let player1 = Player::new(Controls {
                                       up: event::Keycode::Up,
                                       left: event::Keycode::Left,
@@ -62,13 +69,14 @@ impl MainState {
             screen: Screen::new(),
             players: [player1, player2],
             blood_particles: vec![],
+            fps: fps
         };
         Ok(s)
     }
 }
 
 impl event::EventHandler for MainState {
-    fn update(&mut self, ctx: &mut Context, _dt: Duration) -> GameResult<()> {
+    fn update(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<()> {
 
         if !timer::check_update_time(ctx, Self::DESIRED_FPS) {
             return Ok(());
@@ -143,19 +151,16 @@ impl event::EventHandler for MainState {
                 }
             }
         }
+
+        self.fps.update(ctx, &self.assets, dt)?;
+
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx);
 
-        // FPS
-        {
-            let t = timer::get_fps(ctx);
-            let text = graphics::Text::new(ctx, &format!("FPS: {}", t as u32), &self.assets.font)?;
-            let text_pos = graphics::Point { x: 200.0, y: 10.0 };
-            graphics::draw(ctx, &text, text_pos, 0.0)?;
-        }
+        graphics::draw(ctx, &self.fps.text, graphics::Point { x: 200.0, y: 10.0 }, 0.0)?;
 
         for i in 0..self.players.len() {
             draw_player(ctx, &mut self.players[i], &self.screen)?;
@@ -183,8 +188,10 @@ impl event::EventHandler for MainState {
             if keycode == player.controls.up {
                 player.input_axis.y = 1.0;
             } else if keycode == player.controls.left {
+                player.facing = Facing::Left;
                 player.input_axis.x = -1.0;
             } else if keycode == player.controls.right {
+                player.facing = Facing::Right;
                 player.input_axis.x = 1.0;
             }
         }

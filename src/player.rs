@@ -5,6 +5,13 @@ use helpers::random_position;
 
 // Players
 #[derive(Debug)]
+pub enum Facing {
+    Left,
+    Right,
+}
+
+// Players
+#[derive(Debug)]
 pub enum PlayerType {
     Player1,
     Player2,
@@ -14,6 +21,7 @@ pub enum PlayerType {
 pub struct Player {
     pub tag: PlayerType,
     pub position: Vector2<f64>,
+    pub facing: Facing,
     pub size: Vector2<f64>,
     pub cbox_size: Vector2<f64>,
     pub max_velocity: Vector2<f64>,
@@ -29,9 +37,10 @@ impl Player {
         Player {
             tag: tag,
             position: random_position(),
-            size: Vector2::new(0.05, 0.05),
-            cbox_size: Vector2::new(0.025, 0.025),
-            max_velocity: Vector2::new(0.2, 0.7),
+            facing: Facing::Left,
+            size: Vector2::new(0.1, 0.1),
+            cbox_size: Vector2::new(0.075, 0.075),
+            max_velocity: Vector2::new(0.2, 1.0),
             velocity: Vector2::new(0., 0.),
             input_axis: Vector2::new(0., 0.),
             controls: controls,
