@@ -143,7 +143,7 @@ pub fn draw_blood(ctx: &mut Context,
     Ok(())
 }
 
-fn point_from_position(position: Vector2<f64>, screen: &Screen) -> graphics::Point {
+pub fn point_from_position(position: Vector2<f64>, screen: &Screen) -> graphics::Point {
     let pixel_position = screen.position_to_pixel(position);
     graphics::Point {
         x: pixel_position.x as f32,
@@ -160,7 +160,7 @@ fn scale(size: Vector2<f64>, screen: &Screen, image: &graphics::Image) -> graphi
 }
 
 pub fn random_position() -> Vector2<f64> {
-    Vector2::new(rand::random::<f64>() - 0.5, -0.17)
+    Vector2::new(rand::random::<f64>() - 0.5, ::GROUND_Y)
 }
 
 pub fn random_blood_particle(position: Vector2<f64>) -> Blood {

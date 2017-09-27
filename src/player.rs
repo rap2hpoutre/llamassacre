@@ -1,7 +1,6 @@
 use cgmath::Vector2;
 use controls::Controls;
 use animation::PlayerAnimation;
-use helpers::random_position;
 
 // Players
 #[derive(Debug)]
@@ -34,10 +33,18 @@ pub struct Player {
 
 impl Player {
     pub fn new(controls: Controls, tag: PlayerType, animation: PlayerAnimation) -> Player {
+        let position = match tag {
+            PlayerType::Player1 => Vector2::new(0.25, ::GROUND_Y),
+            PlayerType::Player2 => Vector2::new(-0.25, ::GROUND_Y),
+        };
+        let facing = match tag {
+            PlayerType::Player1 => Facing::Left,
+            PlayerType::Player2 => Facing::Right,
+        };
         Player {
             tag: tag,
-            position: random_position(),
-            facing: Facing::Left,
+            position: position,
+            facing: facing,
             size: Vector2::new(0.1, 0.1),
             cbox_size: Vector2::new(0.055, 0.075),
             max_velocity: Vector2::new(0.2, 1.0),

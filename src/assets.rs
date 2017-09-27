@@ -14,7 +14,7 @@ pub struct Assets {
 
 impl Assets {
     pub fn new(ctx: &mut Context) -> GameResult<Assets> {
-        let font = graphics::Font::new(ctx, "/TravelingTypewriter.ttf", 12)?;
+        let font = graphics::Font::new(ctx, "/TravelingTypewriter.ttf", 18)?;
         let blood = graphics::Image::new(ctx, "/blood.png")?;
         let title = graphics::Text::new(ctx, "ayy llama", &font)?;
         let jump = audio::Source::new(ctx, "/jump.wav")?;

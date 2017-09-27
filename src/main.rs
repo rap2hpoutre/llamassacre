@@ -26,6 +26,9 @@ mod particles;
 mod helpers;
 mod ui;
 
+const GROUND_Y: f64 = -0.17;
+
+
 enum Scene {
     Intro,
     Credits,
@@ -45,7 +48,6 @@ struct MainState {
 
 impl MainState {
     const DESIRED_FPS: u64 = 60;
-    const GROUND_Y: f64 = -0.17;
     const GRAVITY_MAGIC_NUMBER: f64 = 20.;
 
     fn new(ctx: &mut Context) -> GameResult<MainState> {
@@ -102,7 +104,7 @@ impl event::EventHandler for MainState {
                         player.velocity.x = seconds * player.max_velocity.x * player.input_axis.x;
 
                         if self.screen
-                               .position_to_pixel(Vector2::new(0., Self::GROUND_Y))
+                               .position_to_pixel(Vector2::new(0., GROUND_Y))
                                .y as u32 >
                            self.screen.position_to_pixel(player.position).y as u32 {
                             player.velocity.y -= seconds * player.max_velocity.y /
@@ -119,8 +121,8 @@ impl event::EventHandler for MainState {
                         player.position.x += player.velocity.x;
                         player.position.y += player.velocity.y;
 
-                        if player.position.y < Self::GROUND_Y {
-                            player.position.y = Self::GROUND_Y;
+                        if player.position.y < GROUND_Y {
+                            player.position.y = GROUND_Y;
                         }
                     }
                 }
@@ -192,19 +194,21 @@ impl event::EventHandler for MainState {
 
                 draw_full_screen(ctx, &self.assets.bg, &self.screen)?;
 
-                graphics::draw(ctx,
-                               &self.fps.text,
-                               graphics::Point { x: 200.0, y: 10.0 },
-                               0.0)?;
-
                 for i in 0..self.players.len() {
                     draw_player(ctx, &mut self.players[i], &self.screen)?;
-                    let text_pos = graphics::Point {
-                        x: 20.0,
-                        y: i as f32 * 24.0 + 10.0,
-                    };
-                    graphics::draw(ctx, &self.text_scores[i], text_pos, 0.0)?;
                 }
+                graphics::draw(ctx,
+                               &self.text_scores[0],
+                               point_from_position(Vector2::new(0.4, 0.45), &self.screen),
+                               0.)?;
+                graphics::draw(ctx,
+                               &self.text_scores[1],
+                               point_from_position(Vector2::new(-0.4, 0.45), &self.screen),
+                               -0.)?;
+                graphics::draw(ctx,
+                               &self.fps.text,
+                               point_from_position(Vector2::new(0., 0.45), &self.screen),
+                               0.)?;
 
                 for i in 0..self.blood_particles.len() {
                     draw_blood(ctx,
@@ -221,7 +225,10 @@ impl event::EventHandler for MainState {
                 draw_full_screen(ctx, &self.assets.bg, &self.screen)?;
                 graphics::draw(ctx,
                                &self.assets.title,
-                               graphics::Point { x: title_pos.x as f32, y: title_pos.y as f32 },
+                               graphics::Point {
+                                   x: title_pos.x as f32,
+                                   y: title_pos.y as f32,
+                               },
                                0.0)?;
             }
         }
@@ -247,7 +254,7 @@ impl event::EventHandler for MainState {
                         player.input_axis.x = 1.0;
                     }
                 }
-            },
+            }
             _ => {
                 if keycode == event::Keycode::Space {
                     self.scene = Scene::Game;
