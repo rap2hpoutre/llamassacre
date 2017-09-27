@@ -39,7 +39,7 @@ impl Player {
             position: random_position(),
             facing: Facing::Left,
             size: Vector2::new(0.1, 0.1),
-            cbox_size: Vector2::new(0.075, 0.075),
+            cbox_size: Vector2::new(0.055, 0.075),
             max_velocity: Vector2::new(0.2, 1.0),
             velocity: Vector2::new(0., 0.),
             input_axis: Vector2::new(0., 0.),

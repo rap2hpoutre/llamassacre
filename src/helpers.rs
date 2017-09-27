@@ -137,6 +137,7 @@ pub fn draw_blood(ctx: &mut Context,
                       graphics::DrawParam {
                           dest: point_from_position(blood.position, screen),
                           scale: scale(blood.size, screen, blood_image),
+                          rotation: blood.velocity.y.atan2(blood.velocity.x * -1.0) as f32,
                           ..Default::default()
                       })?;
     Ok(())
@@ -159,7 +160,7 @@ fn scale(size: Vector2<f64>, screen: &Screen, image: &graphics::Image) -> graphi
 }
 
 pub fn random_position() -> Vector2<f64> {
-    Vector2::new(rand::random::<f64>() - 0.5, 0.)
+    Vector2::new(rand::random::<f64>() - 0.5, -0.17)
 }
 
 pub fn random_blood_particle(position: Vector2<f64>) -> Blood {
@@ -167,6 +168,21 @@ pub fn random_blood_particle(position: Vector2<f64>) -> Blood {
         position: position,
         size: Vector2::new(0.02, 0.02),
         velocity: Vector2::new((rand::random::<f64>() - 0.5) / 50.,
-                               rand::random::<f64>() / 50.),
+                               rand::random::<f64>() / 40.),
     }
+}
+
+pub fn draw_full_screen(ctx: &mut Context, image: &graphics::Image, screen: &Screen) -> GameResult<()> {
+    let dest = point_from_position(Vector2::new(0., 0.), screen);
+    let size = screen.size_to_pixel(Vector2::new(1., 1.));
+    let draw_param = graphics::DrawParam {
+        dest: dest,
+        scale: graphics::Point {
+        x: size.x as f32 / image.width() as f32,
+        y: size.y as f32 / image.height() as f32,
+    },
+        ..Default::default()
+    };
+    graphics::draw_ex(ctx, image, draw_param)?;
+    Ok(())
 }

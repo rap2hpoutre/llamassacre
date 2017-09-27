@@ -45,7 +45,7 @@ struct MainState {
 
 impl MainState {
     const DESIRED_FPS: u64 = 60;
-    const GROUND_Y: f64 = 0.;
+    const GROUND_Y: f64 = -0.17;
     const GRAVITY_MAGIC_NUMBER: f64 = 20.;
 
     fn new(ctx: &mut Context) -> GameResult<MainState> {
@@ -190,6 +190,8 @@ impl event::EventHandler for MainState {
             // Game Scene
             Scene::Game => {
 
+                draw_full_screen(ctx, &self.assets.bg, &self.screen)?;
+
                 graphics::draw(ctx,
                                &self.fps.text,
                                graphics::Point { x: 200.0, y: 10.0 },
@@ -215,10 +217,11 @@ impl event::EventHandler for MainState {
 
             // Intro Scene
             Scene::Intro => {
-                let center = self.screen.position_to_pixel(Vector2::new(0., 0.));
+                let title_pos = self.screen.position_to_pixel(Vector2::new(0., 0.3));
+                draw_full_screen(ctx, &self.assets.bg, &self.screen)?;
                 graphics::draw(ctx,
                                &self.assets.title,
-                               graphics::Point { x: center.x as f32, y: center.y as f32 },
+                               graphics::Point { x: title_pos.x as f32, y: title_pos.y as f32 },
                                0.0)?;
             }
         }
