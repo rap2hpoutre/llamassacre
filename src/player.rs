@@ -1,6 +1,14 @@
 use cgmath::Vector2;
 use controls::Controls;
 use animation::PlayerAnimation;
+use bonus::Mutation;
+use assets::Assets;
+use ggez::{Context, GameResult};
+use helpers;
+use display::Screen;
+use ggez::graphics;
+use timer;
+use std::time::Duration;
 
 // Players
 #[derive(Debug)]
@@ -29,6 +37,7 @@ pub struct Player {
     pub controls: Controls,
     pub score: u32,
     pub animation: PlayerAnimation,
+    pub mutations: Vec<Mutation>
 }
 
 impl Player {
@@ -53,6 +62,69 @@ impl Player {
             controls: controls,
             score: 0,
             animation: animation,
+            mutations: vec![],
         }
+    }
+
+    pub fn draw(&mut self, ctx: &mut Context, screen: &Screen) -> GameResult<()> {
+        let mut size = self.size;
+        let mut position = self.position;
+        for m in &mut self.mutations {
+            size *= m.size_factor;
+        }
+        position.y += (size.y - self.size.y) / 1.5;
+        let dest = helpers::point_from_position(position, screen);
+        let player_image = helpers::player_image(self);
+        let scale = helpers::scale(size, screen, player_image);
+        let draw_param = graphics::DrawParam {
+            dest: dest,
+            scale: scale,
+            ..Default::default()
+        };
+        graphics::draw_ex(ctx, player_image, draw_param)?;
+        Ok(())
+    }
+
+    pub fn update_mutations(&mut self, dt: Duration) {
+        self.mutations.retain(|m| m.duration > 0.);
+        for m in &mut self.mutations {
+            m.duration -= timer::duration_to_f64(dt);
+        }
+    }
+
+    pub fn update_position(&mut self, screen: &Screen, seconds: f64, assets: &Assets) -> GameResult<()> {
+        let mut max_velocity = self.max_velocity; // Maybe I need to copy
+        for m in &mut self.mutations {
+            max_velocity.x *= m.velocity_factor.x;
+            max_velocity.y *= m.velocity_factor.y;
+        }
+
+        self.velocity.x = seconds * max_velocity.x * self.input_axis.x;
+
+        if helpers::is_on_top(self.position, Vector2::new(0., ::GROUND_Y), screen) {
+            self.velocity.y -= seconds * max_velocity.y /
+                                    ::GRAVITY_MAGIC_NUMBER;
+        } else {
+            self.velocity.y = seconds * max_velocity.y * self.input_axis.y;
+            if self.input_axis.y != 0.0 && max_velocity.y > 0. {
+                println!("jump");
+                assets.jump.play()?;
+            }
+        }
+
+        self.position.x += self.velocity.x;
+        self.position.y += self.velocity.y;
+
+        if self.position.y < ::GROUND_Y {
+            self.position.y = ::GROUND_Y;
+        }
+
+        if self.position.x > 0.5 {
+            self.position.x = -0.5;
+        } else if self.position.x < -0.5 {
+            self.position.x = 0.5;
+        }
+
+        Ok(())
     }
 }
