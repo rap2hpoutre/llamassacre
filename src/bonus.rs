@@ -4,12 +4,13 @@ use std::time::Duration;
 use ggez::{Context, GameResult};
 use rand::{thread_rng, Rng, random};
 use ggez::timer;
+use helpers;
+use display::Screen;
 use player::Player;
 
 pub enum BonusType {
     GiveOnePoint,
     GiveFivePoint,
-    Size2,
     Velocity2,
     Freeze,
 }
@@ -20,6 +21,7 @@ pub struct Bonus {
     pub size: Vector2<f64>,
     pub cbox_size: Vector2<f64>,
     pub velocity: Vector2<f64>,
+    pub rotation: f32,
     pub image: graphics::Image,
     pub has_collision: bool,
 }
@@ -31,22 +33,22 @@ impl Bonus {
         let b = Bonus {
             tag: tag,
             position: Self::random_position(),
-            size: Vector2::new(0.1, 0.1),
-            cbox_size: Vector2::new(0.055, 0.075),
+            size: Vector2::new(0.05, 0.05),
+            cbox_size: Vector2::new(0.045, 0.065),
             velocity: Self::random_velocity(),
             image: image,
+            rotation: 0.,
             has_collision: false,
         };
         Ok(b)
     }
 
     fn random_type() -> BonusType {
-        match thread_rng().gen_range(0, 5) {
+        match thread_rng().gen_range(0, 4) {
             0 => BonusType::GiveOnePoint,
             1 => BonusType::GiveFivePoint,
-            2 => BonusType::Size2,
-            3 => BonusType::Velocity2,
-            4 => BonusType::Freeze,
+            2 => BonusType::Velocity2,
+            3 => BonusType::Freeze,
             _ => unreachable!(),
         }
     }
@@ -62,21 +64,43 @@ impl Bonus {
     fn image_by_tag(ctx: &mut Context, b: &BonusType) -> GameResult<graphics::Image> {
         Ok(match b {
                &BonusType::GiveOnePoint => {
-                   graphics::Image::solid(ctx, 32, graphics::Color::new(0., 0., 1., 1.))?
+                   let mut a = graphics::Image::new(ctx, "/bonus_1.png")?;
+                   a.set_filter(graphics::FilterMode::Nearest);
+                   a
                }
                &BonusType::GiveFivePoint => {
-                   graphics::Image::solid(ctx, 32, graphics::Color::new(0., 1., 0., 1.))?
+                   let mut a = graphics::Image::new(ctx, "/bonus_0.png")?;
+                   a.set_filter(graphics::FilterMode::Nearest);
+                   a
                }
-               &BonusType::Size2 => {
-                   graphics::Image::solid(ctx, 32, graphics::Color::new(1., 1., 0., 1.))?
-               }
+               
                &BonusType::Velocity2 => {
-                   graphics::Image::solid(ctx, 32, graphics::Color::new(1., 0., 0., 1.))?
+                   let mut a = graphics::Image::new(ctx, "/bonus_2.png")?;
+                   a.set_filter(graphics::FilterMode::Nearest);
+                   a
                }
                &BonusType::Freeze => {
-                   graphics::Image::solid(ctx, 32, graphics::Color::new(0.5, 0.7, 1., 1.))?
+                   let mut a = graphics::Image::new(ctx, "/bonus_3.png")?;
+                   a.set_filter(graphics::FilterMode::Nearest);
+                   a
                }
            })
+    }
+
+    pub fn draw(&mut self, ctx: &mut Context, screen: &Screen) -> GameResult<()> {
+        let size = self.size;
+        let position = self.position;
+        let image = &self.image;
+        let dest = helpers::point_from_position(position, screen);
+        let scale = helpers::scale(size, screen, image);
+        let draw_param = graphics::DrawParam {
+            dest: dest,
+            scale: scale,
+            rotation: self.rotation,
+            ..Default::default()
+        };
+        graphics::draw_ex(ctx, image, draw_param)?;
+        Ok(())
     }
 
     pub fn apply(&self, p: &mut Player) -> Option<Mutation> {
@@ -88,18 +112,6 @@ impl Bonus {
             BonusType::GiveFivePoint => {
                 p.score += 5;
                 None
-            }
-            // This need to be fixed
-            BonusType::Size2 => {
-                None
-                /*
-                Some(Mutation {
-                         duration: 5.,
-                         size_factor: 2.,
-                         velocity_factor: Vector2::new(1., 1.),
-                         active: true,
-                     })
-                     */
             }
             BonusType::Velocity2 => {
                 Some(Mutation {
@@ -123,11 +135,15 @@ impl Bonus {
 
 pub struct Factory {
     pub cooldown: f64,
+    pub image: graphics::Image,
+    pub position: Vector2<f64>,
+    pub size: Vector2<f64>,
 }
 
 impl Factory {
-    pub fn new() -> Self {
-        Self { cooldown: 5. }
+    pub fn new(ctx: &mut Context) ->  GameResult<Self> {
+        let image = graphics::Image::new(ctx, "/divin.png")?;
+        Ok(Self { cooldown: 5., image: image, position: Vector2::new(0., 0.3), size: Vector2::new(0.1, 0.1), })
     }
 
     pub fn spawn(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<Option<Bonus>> {
@@ -138,6 +154,23 @@ impl Factory {
             return Ok(Some(Bonus::random(ctx)?));
         }
         Ok(None)
+    }
+
+    pub fn draw(&mut self, ctx: &mut Context, screen: &Screen) -> GameResult<()> {
+        let size = screen.size_to_pixel(Vector2::new(0.1625, 0.34));
+        let position = self.position;
+        let image = &self.image;
+        let dest = helpers::point_from_position(position, screen);
+        let draw_param = graphics::DrawParam {
+            dest: dest,
+            scale: graphics::Point {
+                x: size.x as f32 / image.width() as f32,
+                y: size.y as f32 / image.height() as f32,
+            },
+            ..Default::default()
+        };
+        graphics::draw_ex(ctx, image, draw_param)?;
+        Ok(())
     }
 
     fn cooldown() -> f64 {

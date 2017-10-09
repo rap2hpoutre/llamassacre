@@ -38,7 +38,7 @@ impl Assets {
         let jump = audio::Source::new(ctx, "/jump.wav")?;
         let take_bonus = audio::Source::new(ctx, "/jump.wav")?;
         let death = audio::Source::new(ctx, "/death.ogg")?;
-        let mut bg = graphics::Image::new(ctx, "/bg.png")?;
+        let mut bg = graphics::Image::new(ctx, "/bg3.png")?;
         bg.set_filter(graphics::FilterMode::Nearest);
         let s = Assets {
             font: font,

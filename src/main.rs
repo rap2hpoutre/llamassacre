@@ -28,7 +28,7 @@ mod helpers;
 mod ui;
 mod bonus;
 
-const GROUND_Y: f64 = -0.17;
+const GROUND_Y: f64 = -0.33;
 const GRAVITY_MAGIC_NUMBER: f64 = 20.;
 
 enum Scene {
@@ -54,6 +54,7 @@ impl MainState {
     const DESIRED_FPS: u64 = 60;
 
     fn new(ctx: &mut Context) -> GameResult<MainState> {
+        graphics::set_default_filter(ctx, graphics::FilterMode::Nearest);
         let assets = Assets::new(ctx)?;
         let text_scores = [
             graphics::Text::new(ctx, "0", &assets.font)?,
@@ -89,7 +90,7 @@ impl MainState {
             blood_particles: vec![],
             fps: fps,
             scene: Scene::Intro,
-            bonus_factory: bonus::Factory::new(),
+            bonus_factory: bonus::Factory::new(ctx)?,
             bonuses: vec![],
         };
         Ok(s)
@@ -134,6 +135,7 @@ impl event::EventHandler for MainState {
                     }
                     // Move
                     for bonus in &mut self.bonuses {
+                        bonus.rotation += (seconds * 500. * bonus.velocity.x) as f32;
                         if bonus.position.y > GROUND_Y - 0.03 {
                             bonus.velocity.y -= seconds / GRAVITY_MAGIC_NUMBER;
                         } else {
@@ -238,13 +240,10 @@ impl event::EventHandler for MainState {
                     self.players[i].draw(ctx, &self.screen)?;
                 }
                 for i in 0..self.bonuses.len() {
-                    graphics::draw(
-                        ctx,
-                        &self.bonuses[i].image,
-                        point_from_position(self.bonuses[i].position, &self.screen),
-                        0.,
-                    )?;
+                    self.bonuses[i].draw(ctx, &self.screen)?;
                 }
+                self.bonus_factory.draw(ctx, &self.screen)?;
+
                 quick_draw(ctx, &self.text_scores[0], (0.4, 0.45), &self.screen)?;
                 quick_draw(ctx, &self.text_scores[1], (-0.4, 0.45), &self.screen)?;
                 quick_draw(ctx, &self.fps.text, (0., 0.45), &self.screen)?;
@@ -257,14 +256,22 @@ impl event::EventHandler for MainState {
                         &mut self.assets,
                     )?;
                 }
+                
             }
             Scene::Credits => {}
 
             // Intro Scene
             Scene::Intro => {
+                graphics::set_color(ctx, graphics::Color::new(0., 0., 0., 0.75))?;
+                let center = self.screen.position_to_pixel(Vector2::new(0., 0.));
+                let size = self.screen.size_to_pixel(Vector2::new(1., 1.));
+                let rect = graphics::Rect::new(center.x as f32, center.y as f32, size.x as f32, size.y as f32);
+                graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
+                graphics::set_color(ctx, (255, 255, 255).into())?;
+
                 for i in 0..self.assets.instructions_p1.len() {
                     let pos = self.screen
-                        .position_to_pixel(Vector2::new(-0.3, 0.1 + i as f64 / -15.));
+                        .position_to_pixel(Vector2::new(-0.15, 0.1 + i as f64 / -15.));
                     graphics::draw(
                         ctx,
                         &self.assets.instructions_p1[i],
@@ -274,7 +281,7 @@ impl event::EventHandler for MainState {
                 }
                 for i in 0..self.assets.instructions_p2.len() {
                     let pos = self.screen
-                        .position_to_pixel(Vector2::new(0.3, 0.1 + i as f64 / -15.));
+                        .position_to_pixel(Vector2::new(0.15, 0.1 + i as f64 / -15.));
                     graphics::draw(
                         ctx,
                         &self.assets.instructions_p2[i],

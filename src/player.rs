@@ -37,7 +37,7 @@ pub struct Player {
     pub controls: Controls,
     pub score: u32,
     pub animation: PlayerAnimation,
-    pub mutations: Vec<Mutation>
+    pub mutations: Vec<Mutation>,
 }
 
 impl Player {
@@ -72,6 +72,8 @@ impl Player {
         for m in &mut self.mutations {
             size *= m.size_factor;
         }
+        let initial_max_velocity = self.max_velocity;
+        let max_velocity = self.max_velocity_mutated();
         position.y += (size.y - self.size.y) / 1.5;
         let dest = helpers::point_from_position(position, screen);
         let player_image = helpers::player_image(self);
@@ -81,7 +83,29 @@ impl Player {
             scale: scale,
             ..Default::default()
         };
+        if max_velocity.x == 0. {
+            graphics::set_color(ctx, graphics::Color::new(0.3, 0.4, 0.8, 0.9))?;
+        } else if max_velocity.x > initial_max_velocity.x {
+            graphics::set_color(ctx, graphics::Color::new(1., 0.5, 0.5, 1.))?;
+        }
         graphics::draw_ex(ctx, player_image, draw_param)?;
+
+        if (max_velocity.x == 0.) || (max_velocity.x > initial_max_velocity.x) {
+            graphics::set_color(ctx, (255, 255, 255).into())?;
+        }
+/*
+        if max_velocity.x == 0. {
+            graphics::set_color(ctx, graphics::Color::new(0.5, 0.6, 1.0, 0.5))?;
+            let border_size = screen.size_to_pixel(size).x as f32;
+            let rect = graphics::Rect::new(dest.x, dest.y, border_size + 4., border_size + 4.);
+            graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
+            graphics::set_line_width(ctx, 4. as f32);
+            graphics::set_color(ctx, graphics::Color::new(0.5, 0.6, 1.0, 1.))?;
+            graphics::rectangle(ctx, graphics::DrawMode::Line, rect)?;
+            graphics::set_color(ctx, (255, 255, 255).into())?;
+        }
+*/
+
         Ok(())
     }
 
@@ -92,18 +116,34 @@ impl Player {
         }
     }
 
-    pub fn update_position(&mut self, screen: &Screen, seconds: f64, assets: &Assets) -> GameResult<()> {
+    fn max_velocity_mutated(&self) -> Vector2<f64> {
         let mut max_velocity = self.max_velocity; // Maybe I need to copy
-        for m in &mut self.mutations {
+        for m in &self.mutations {
             max_velocity.x *= m.velocity_factor.x;
             max_velocity.y *= m.velocity_factor.y;
         }
+        max_velocity
+    }
+
+    pub fn update_position(
+        &mut self,
+        screen: &Screen,
+        seconds: f64,
+        assets: &Assets,
+    ) -> GameResult<()> {
+        let max_velocity = self.max_velocity_mutated();
 
         self.velocity.x = seconds * max_velocity.x * self.input_axis.x;
 
         if helpers::is_on_top(self.position, Vector2::new(0., ::GROUND_Y), screen) {
-            self.velocity.y -= seconds * max_velocity.y /
-                                    ::GRAVITY_MAGIC_NUMBER;
+            if max_velocity.y == 0. {
+                if self.velocity.y > 0. {
+                    self.velocity.y = 0.;
+                }
+                self.velocity.y -= seconds * self.max_velocity.y / ::GRAVITY_MAGIC_NUMBER;
+            } else {
+                self.velocity.y -= seconds * max_velocity.y / ::GRAVITY_MAGIC_NUMBER;
+            }
         } else {
             self.velocity.y = seconds * max_velocity.y * self.input_axis.y;
             if self.input_axis.y != 0.0 && max_velocity.y > 0. {
