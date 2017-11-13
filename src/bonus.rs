@@ -61,7 +61,7 @@ impl Bonus {
     }
 
     fn random_velocity() -> Vector2<f64> {
-        Vector2::new((random::<f64>() - 0.5) / 100., 0.)
+        Vector2::new((random::<f64>() - 0.5) / 50., 0.01)
     }
 
     fn image_by_tag(ctx: &mut Context, b: &BonusType) -> GameResult<graphics::Image> {

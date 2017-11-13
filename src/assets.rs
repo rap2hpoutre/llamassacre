@@ -8,6 +8,7 @@ pub struct Assets {
     pub font_small: graphics::Font,
     pub blood: graphics::Image,
     pub bg: graphics::Image,
+    pub shadow: graphics::Image,
     pub title: graphics::Text,
     pub authors: graphics::Text,
     pub instructions_p1: Vec<graphics::Text>,
@@ -39,7 +40,8 @@ impl Assets {
         let jump = audio::Source::new(ctx, "/jump.wav")?;
         let take_bonus = audio::Source::new(ctx, "/bonus.wav")?;
         let death = audio::Source::new(ctx, "/death.ogg")?;
-        let mut bg = graphics::Image::new(ctx, "/bg3.png")?;
+        let mut bg = graphics::Image::new(ctx, "/bg8.png")?;
+        let shadow = graphics::Image::new(ctx, "/shadow2.png")?;
         bg.set_filter(graphics::FilterMode::Nearest);
         let s = Assets {
             font: font,
@@ -53,6 +55,7 @@ impl Assets {
             authors: authors,
             instructions_p1: instructions_p1,
             instructions_p2: instructions_p2,
+            shadow: shadow
         };
         Ok(s)
     }

@@ -93,18 +93,6 @@ impl Player {
         if (max_velocity.x == 0.) || (max_velocity.x > initial_max_velocity.x) {
             graphics::set_color(ctx, (255, 255, 255).into())?;
         }
-/*
-        if max_velocity.x == 0. {
-            graphics::set_color(ctx, graphics::Color::new(0.5, 0.6, 1.0, 0.5))?;
-            let border_size = screen.size_to_pixel(size).x as f32;
-            let rect = graphics::Rect::new(dest.x, dest.y, border_size + 4., border_size + 4.);
-            graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
-            graphics::set_line_width(ctx, 4. as f32);
-            graphics::set_color(ctx, graphics::Color::new(0.5, 0.6, 1.0, 1.))?;
-            graphics::rectangle(ctx, graphics::DrawMode::Line, rect)?;
-            graphics::set_color(ctx, (255, 255, 255).into())?;
-        }
-*/
 
         Ok(())
     }

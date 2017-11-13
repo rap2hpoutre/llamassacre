@@ -17,7 +17,6 @@ use player::{Facing, Player, PlayerType};
 use particles::Blood;
 use helpers::*;
 use bonus::{Bonus, BonusText};
-use rand::{thread_rng, Rng, random};
 
 mod controls;
 mod display;
@@ -267,6 +266,22 @@ impl event::EventHandler for MainState {
 
                 // Images
                 for i in 0..self.players.len() {
+                    // Shadow
+                    let pos = Vector2::new(self.players[i].position.x, GROUND_Y - 0.08);
+                    let dest = helpers::point_from_position(pos, &self.screen);
+                    let size = self.screen.size_to_pixel(Vector2::new(0.1, 0.1 / 3.0));
+                    let draw_param = graphics::DrawParam {
+                        dest: dest,
+                        scale: graphics::Point {
+                            x: size.x as f32 / self.assets.shadow.width() as f32,
+                            y: size.y as f32 / self.assets.shadow.height() as f32,
+                        },
+                        ..Default::default()
+                    };
+                    graphics::set_color(ctx, graphics::Color::new(255., 255., 255., 0.5))?;
+                    graphics::draw_ex(ctx, &self.assets.shadow, draw_param)?;
+                    graphics::set_color(ctx, (255, 255, 255).into())?;
+                    // End shadow
                     self.players[i].draw(ctx, &self.screen)?;
                 }
                 for i in 0..self.bonuses.len() {
@@ -285,7 +300,7 @@ impl event::EventHandler for MainState {
                 // Texts
                 quick_draw(ctx, &self.text_scores[0], (0.4, 0.45), &self.screen)?;
                 quick_draw(ctx, &self.text_scores[1], (-0.4, 0.45), &self.screen)?;
-                quick_draw(ctx, &self.fps.text, (0., -0.45), &self.screen)?;
+                quick_draw(ctx, &self.fps.text, (0., -0.47), &self.screen)?;
                 for i in 0..self.bonuses_text.len() {
                     let a = (self.bonuses_text[i].position.x, self.bonuses_text[i].position.y);
                     quick_draw(ctx, &self.bonuses_text[i].text, a, &self.screen)?;
