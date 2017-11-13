@@ -24,21 +24,24 @@ pub struct Bonus {
     pub rotation: f32,
     pub image: graphics::Image,
     pub has_collision: bool,
+    pub description: String,
 }
 
 impl Bonus {
-    fn random(ctx: &mut Context) -> GameResult<Self> {
+    fn random(ctx: &mut Context, position: Option<Vector2<f64>>) -> GameResult<Self> {
         let tag = Self::random_type();
         let image = Self::image_by_tag(ctx, &tag)?;
+        let text = Self::text_by_tag(&tag);
         let b = Bonus {
             tag: tag,
-            position: Self::random_position(),
+            position: position.unwrap_or(Self::random_position()),
             size: Vector2::new(0.05, 0.05),
             cbox_size: Vector2::new(0.045, 0.065),
             velocity: Self::random_velocity(),
             image: image,
             rotation: 0.,
             has_collision: false,
+            description: text
         };
         Ok(b)
     }
@@ -87,6 +90,17 @@ impl Bonus {
            })
     }
 
+
+    fn text_by_tag(b: &BonusType) -> String {
+        match b {
+               &BonusType::GiveOnePoint => "score +1",
+               &BonusType::GiveFivePoint => "score +5",
+               &BonusType::Velocity2 => "speed x2",
+               &BonusType::Freeze => "freeze",
+               
+           }.to_string()
+    }
+
     pub fn draw(&mut self, ctx: &mut Context, screen: &Screen) -> GameResult<()> {
         let size = self.size;
         let position = self.position;
@@ -133,25 +147,31 @@ impl Bonus {
     }
 }
 
+pub struct BonusText {
+    pub text: graphics::Text,
+    pub position: Vector2<f64>,
+    pub cooldown: f64,
+}
+
 pub struct Factory {
     pub cooldown: f64,
     pub image: graphics::Image,
     pub position: Vector2<f64>,
+    pub velocity: Vector2<f64>,
     pub size: Vector2<f64>,
 }
 
 impl Factory {
     pub fn new(ctx: &mut Context) ->  GameResult<Self> {
-        let image = graphics::Image::new(ctx, "/divin.png")?;
-        Ok(Self { cooldown: 5., image: image, position: Vector2::new(0., 0.3), size: Vector2::new(0.1, 0.1), })
+        let image = graphics::Image::new(ctx, "/divin2.png")?;
+        Ok(Self { cooldown: 15., image: image, position: Vector2::new(0., 0.3), size: Vector2::new(0.1, 0.1), velocity: Vector2::new(0.2, 0.0) })
     }
 
     pub fn spawn(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<Option<Bonus>> {
         self.cooldown -= timer::duration_to_f64(dt);
         if self.cooldown < 0. {
             self.cooldown = Self::cooldown();
-            println!("spawn");
-            return Ok(Some(Bonus::random(ctx)?));
+            return Ok(Some(Bonus::random(ctx, Some(self.position))?));
         }
         Ok(None)
     }
@@ -174,7 +194,7 @@ impl Factory {
     }
 
     fn cooldown() -> f64 {
-        thread_rng().gen_range(1., 2.)
+        thread_rng().gen_range(0., 30.)
     }
 }
 

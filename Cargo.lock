@@ -1,4 +1,9 @@
-[root]
+[[package]]
+name = "adler32"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "aknit"
 version = "0.1.0"
 dependencies = [
@@ -6,11 +11,6 @@ dependencies = [
  "ggez 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
-
-[[package]]
-name = "adler32"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "alsa-sys"

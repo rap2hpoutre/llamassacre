@@ -17,7 +17,7 @@ impl Fps {
         if self.cooldown < 0. {
             self.cooldown = Self::REFRESH_RATE;
             let t = timer::get_fps(ctx);
-            self.text = graphics::Text::new(ctx, &format!("FPS: {}", t as u32), &assets.font)?;
+            self.text = graphics::Text::new(ctx, &format!("FPS: {}", t as u32), &assets.font_small)?;
         }
         Ok(())
     }

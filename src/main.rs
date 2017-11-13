@@ -16,7 +16,8 @@ use ui::Fps;
 use player::{Facing, Player, PlayerType};
 use particles::Blood;
 use helpers::*;
-use bonus::Bonus;
+use bonus::{Bonus, BonusText};
+use rand::{thread_rng, Rng, random};
 
 mod controls;
 mod display;
@@ -48,6 +49,7 @@ struct MainState {
     scene: Scene,
     bonus_factory: bonus::Factory,
     bonuses: Vec<Bonus>,
+    bonuses_text: Vec<BonusText>,
 }
 
 impl MainState {
@@ -92,6 +94,7 @@ impl MainState {
             scene: Scene::Intro,
             bonus_factory: bonus::Factory::new(ctx)?,
             bonuses: vec![],
+            bonuses_text: vec![],
         };
         Ok(s)
     }
@@ -124,6 +127,26 @@ impl event::EventHandler for MainState {
                     // Remove if out of screen
                     self.blood_particles
                         .retain(|blood_particle| blood_particle.position.y > -0.5);
+                }
+
+                // Bonus factory
+                {
+                    self.bonus_factory.position += self.bonus_factory.velocity * seconds;
+                    if self.bonus_factory.position.x > 0.5 || self.bonus_factory.position.x < -0.5 {
+                        self.bonus_factory.velocity.x *= -1.;
+                    }
+                }
+
+                // Bonus text
+                {
+                    // Move
+                    for bonus_text in &mut self.bonuses_text {
+                        bonus_text.position.y += seconds * 0.1;
+                        bonus_text.cooldown -= seconds;
+                    }
+                    // Remove if out of screen
+                    self.bonuses_text
+                        .retain(|bonus_text| bonus_text.cooldown > 0.);
                 }
 
                 // Bonus
@@ -205,6 +228,11 @@ impl event::EventHandler for MainState {
                             bonus.has_collision = distance <= cbox_size.x;
                             if bonus.has_collision {
                                 self.assets.take_bonus.play()?;
+                                self.bonuses_text.push(BonusText { 
+                                    text: graphics::Text::new(ctx, &bonus.description, &self.assets.font_small)?,
+                                    position: bonus.position,
+                                    cooldown: 1.0,
+                                });
                                 match bonus.apply(&mut self.players[i]) {
                                     Some(m) => self.players[i].mutations.push(m),
                                     None => {
@@ -236,6 +264,8 @@ impl event::EventHandler for MainState {
         match self.scene {
             // Game Scene
             Scene::Game => {
+
+                // Images
                 for i in 0..self.players.len() {
                     self.players[i].draw(ctx, &self.screen)?;
                 }
@@ -243,11 +273,6 @@ impl event::EventHandler for MainState {
                     self.bonuses[i].draw(ctx, &self.screen)?;
                 }
                 self.bonus_factory.draw(ctx, &self.screen)?;
-
-                quick_draw(ctx, &self.text_scores[0], (0.4, 0.45), &self.screen)?;
-                quick_draw(ctx, &self.text_scores[1], (-0.4, 0.45), &self.screen)?;
-                quick_draw(ctx, &self.fps.text, (0., 0.45), &self.screen)?;
-
                 for i in 0..self.blood_particles.len() {
                     draw_blood(
                         ctx,
@@ -256,7 +281,15 @@ impl event::EventHandler for MainState {
                         &mut self.assets,
                     )?;
                 }
-                
+
+                // Texts
+                quick_draw(ctx, &self.text_scores[0], (0.4, 0.45), &self.screen)?;
+                quick_draw(ctx, &self.text_scores[1], (-0.4, 0.45), &self.screen)?;
+                quick_draw(ctx, &self.fps.text, (0., -0.45), &self.screen)?;
+                for i in 0..self.bonuses_text.len() {
+                    let a = (self.bonuses_text[i].position.x, self.bonuses_text[i].position.y);
+                    quick_draw(ctx, &self.bonuses_text[i].text, a, &self.screen)?;
+                }
             }
             Scene::Credits => {}
 
@@ -265,7 +298,12 @@ impl event::EventHandler for MainState {
                 graphics::set_color(ctx, graphics::Color::new(0., 0., 0., 0.75))?;
                 let center = self.screen.position_to_pixel(Vector2::new(0., 0.));
                 let size = self.screen.size_to_pixel(Vector2::new(1., 1.));
-                let rect = graphics::Rect::new(center.x as f32, center.y as f32, size.x as f32, size.y as f32);
+                let rect = graphics::Rect::new(
+                    center.x as f32,
+                    center.y as f32,
+                    size.x as f32,
+                    size.y as f32,
+                );
                 graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
                 graphics::set_color(ctx, (255, 255, 255).into())?;
 
