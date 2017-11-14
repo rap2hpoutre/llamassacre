@@ -130,10 +130,23 @@ impl event::EventHandler for MainState {
 
                 // Bonus factory
                 {
-                    self.bonus_factory.position += self.bonus_factory.velocity * seconds;
-                    if self.bonus_factory.position.x > 0.5 || self.bonus_factory.position.x < -0.5 {
+                    
+                    if self.bonus_factory.position.y > 0.3 {
+                        self.bonus_factory.position.y -= seconds / 50.;
+                    } else {
+                        self.bonus_factory.position.y = 0.3;
+                        self.bonus_factory.position += self.bonus_factory.velocity * seconds;
+                        if self.bonus_factory.position.x > 1.5 || self.bonus_factory.position.x < -1.5 {
                         self.bonus_factory.velocity.x *= -1.;
+                        }
                     }
+                    self.bonus_factory.rotation += seconds as f32 * self.bonus_factory.rotation_velocity;
+                    self.bonus_factory.rotation_velocity -= self.bonus_factory.rotation / 30.;
+                    /*
+                    if self.bonus_factory.rotation > 0.2 || self.bonus_factory.rotation < -0.2 {
+                        self.bonus_factory.rotation_velocity *= -1.;
+                    }
+                    */
                 }
 
                 // Bonus text
