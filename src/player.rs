@@ -4,6 +4,7 @@ use animation::PlayerAnimation;
 use bonus::Mutation;
 use assets::Assets;
 use ggez::{Context, GameResult};
+use ggez::audio;
 use helpers;
 use display::Screen;
 use ggez::graphics;
@@ -136,7 +137,11 @@ impl Player {
             self.velocity.y = seconds * max_velocity.y * self.input_axis.y;
             if self.input_axis.y != 0.0 && max_velocity.y > 0. {
                 println!("jump");
-                assets.jump.play()?;
+                match self.tag {
+                    PlayerType::Player1 => assets.jump[0].play()?,
+                    PlayerType::Player2 => assets.jump[1].play()?,
+                };
+;
             }
         }
 

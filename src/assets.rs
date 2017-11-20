@@ -11,9 +11,10 @@ pub struct Assets {
     pub shadow: graphics::Image,
     pub title: graphics::Text,
     pub authors: graphics::Text,
+    pub single: graphics::Text,
     pub instructions_p1: Vec<graphics::Text>,
     pub instructions_p2: Vec<graphics::Text>,
-    pub jump: audio::Source,
+    pub jump: Vec<audio::Source>,
     pub death: audio::Source,
     pub take_bonus: audio::Source,
 }
@@ -23,8 +24,9 @@ impl Assets {
         let font = graphics::Font::new(ctx, "/TravelingTypewriter.ttf", 18)?;
         let font_small = graphics::Font::new(ctx, "/TravelingTypewriter.ttf", 12)?;
         let blood = graphics::Image::new(ctx, "/blood.png")?;
-        let title = graphics::Text::new(ctx, "AYY LLAMA", &font)?;
-        let authors = graphics::Text::new(ctx, "by rap2h & iorekb", &font_small)?;
+        let title = graphics::Text::new(ctx, "SQUEEZE LLAMA", &font)?;
+        let authors = graphics::Text::new(ctx, "press SPACE to start, C for credits", &font_small)?;
+        let single = graphics::Text::new(ctx, "single player? press ESC to quit", &font_small)?;
         let instructions_p1 = vec![
             graphics::Text::new(ctx, "Player 1:", &font_small)?,
             graphics::Text::new(ctx, "E: jump", &font_small)?,
@@ -37,7 +39,8 @@ impl Assets {
             graphics::Text::new(ctx, "left: left", &font_small)?,
             graphics::Text::new(ctx, "right: right", &font_small)?,
         ];
-        let jump = audio::Source::new(ctx, "/jump.wav")?;
+        let jump = audio::Source::new(ctx, "/jump.ogg")?;
+        let jump2 = audio::Source::new(ctx, "/jump.ogg")?;
         let take_bonus = audio::Source::new(ctx, "/bonus.wav")?;
         let death = audio::Source::new(ctx, "/death.ogg")?;
         let mut bg = graphics::Image::new(ctx, "/bg8.png")?;
@@ -49,13 +52,14 @@ impl Assets {
             blood: blood,
             bg: bg,
             title: title,
-            jump: jump,
+            jump: vec![jump, jump2],
             death: death,
             take_bonus: take_bonus,
             authors: authors,
             instructions_p1: instructions_p1,
             instructions_p2: instructions_p2,
-            shadow: shadow
+            shadow: shadow,
+            single: single,
         };
         Ok(s)
     }

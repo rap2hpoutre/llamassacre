@@ -6,6 +6,7 @@ use ggez::event;
 use ggez::{Context, GameResult};
 use ggez::graphics;
 use ggez::timer;
+use ggez::audio;
 use std::time::Duration;
 use cgmath::Vector2;
 use cgmath::MetricSpace;
@@ -142,11 +143,6 @@ impl event::EventHandler for MainState {
                     }
                     self.bonus_factory.rotation += seconds as f32 * self.bonus_factory.rotation_velocity;
                     self.bonus_factory.rotation_velocity -= self.bonus_factory.rotation / 30.;
-                    /*
-                    if self.bonus_factory.rotation > 0.2 || self.bonus_factory.rotation < -0.2 {
-                        self.bonus_factory.rotation_velocity *= -1.;
-                    }
-                    */
                 }
 
                 // Bonus text
@@ -336,29 +332,12 @@ impl event::EventHandler for MainState {
                 graphics::set_color(ctx, (255, 255, 255).into())?;
 
                 for i in 0..self.assets.instructions_p1.len() {
-                    let pos = self.screen
-                        .position_to_pixel(Vector2::new(-0.15, 0.1 + i as f64 / -15.));
-                    graphics::draw(
-                        ctx,
-                        &self.assets.instructions_p1[i],
-                        vector2_to_point(pos),
-                        0.,
-                    )?;
+                    quick_draw(ctx, &self.assets.instructions_p1[i], (-0.15, 0.1 + i as f64 / -15.), &self.screen)?;
+                    quick_draw(ctx, &self.assets.instructions_p2[i], (0.15, 0.1 + i as f64 / -15.), &self.screen)?;
                 }
-                for i in 0..self.assets.instructions_p2.len() {
-                    let pos = self.screen
-                        .position_to_pixel(Vector2::new(0.15, 0.1 + i as f64 / -15.));
-                    graphics::draw(
-                        ctx,
-                        &self.assets.instructions_p2[i],
-                        vector2_to_point(pos),
-                        0.,
-                    )?;
-                }
-                let title_pos = self.screen.position_to_pixel(Vector2::new(0., 0.4));
-                let author_pos = self.screen.position_to_pixel(Vector2::new(0., 0.3));
-                graphics::draw(ctx, &self.assets.title, vector2_to_point(title_pos), 0.)?;
-                graphics::draw(ctx, &self.assets.authors, vector2_to_point(author_pos), 0.)?;
+                quick_draw(ctx, &self.assets.title, (0., 0.4), &self.screen)?;
+                quick_draw(ctx, &self.assets.authors,(0., 0.3), &self.screen)?;
+                quick_draw(ctx, &self.assets.single, (0., -0.4), &self.screen)?;
             }
         }
 
@@ -409,10 +388,10 @@ impl event::EventHandler for MainState {
 
 pub fn main() {
     let mut c = conf::Conf::new();
-    c.window_title = "aknit".to_string();
+    c.window_title = "Squeeze Llama".to_string();
     c.window_width = Screen::WIDTH;
     c.window_height = Screen::HEIGHT;
-    let ctx = &mut Context::load_from_conf("aknit", "ggez", c).unwrap();
+    let ctx = &mut Context::load_from_conf("Squeeze Llama", "ggez", c).unwrap();
     let state = &mut MainState::new(ctx).unwrap();
     if let Err(e) = event::run(ctx, state) {
         println!("Error encountered: {}", e);
