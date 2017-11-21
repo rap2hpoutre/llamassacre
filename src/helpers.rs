@@ -204,3 +204,18 @@ pub fn draw_full_screen(
 pub fn is_on_top(first: Vector2<f64>, second: Vector2<f64>, screen: &Screen) -> bool {
     screen.position_to_pixel(second).y as i32 > screen.position_to_pixel(first).y as i32
 }
+
+pub fn transparent_layer(ctx: &mut Context, screen: &Screen) -> GameResult<()> {
+    graphics::set_color(ctx, graphics::Color::new(0., 0., 0., 0.75))?;
+    let center = screen.position_to_pixel(Vector2::new(0., 0.));
+    let size = screen.size_to_pixel(Vector2::new(1., 1.));
+    let rect = graphics::Rect::new(
+        center.x as f32,
+        center.y as f32,
+        size.x as f32,
+        size.y as f32,
+    );
+    graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
+    graphics::set_color(ctx, (255, 255, 255).into())?;
+    Ok(())
+}

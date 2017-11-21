@@ -6,7 +6,6 @@ use ggez::event;
 use ggez::{Context, GameResult};
 use ggez::graphics;
 use ggez::timer;
-use ggez::audio;
 use std::time::Duration;
 use cgmath::Vector2;
 use cgmath::MetricSpace;
@@ -130,20 +129,7 @@ impl event::EventHandler for MainState {
                 }
 
                 // Bonus factory
-                {
-                    
-                    if self.bonus_factory.position.y > 0.3 {
-                        self.bonus_factory.position.y -= seconds / 50.;
-                    } else {
-                        self.bonus_factory.position.y = 0.3;
-                        self.bonus_factory.position += self.bonus_factory.velocity * seconds;
-                        if self.bonus_factory.position.x > 1.5 || self.bonus_factory.position.x < -1.5 {
-                        self.bonus_factory.velocity.x *= -1.;
-                        }
-                    }
-                    self.bonus_factory.rotation += seconds as f32 * self.bonus_factory.rotation_velocity;
-                    self.bonus_factory.rotation_velocity -= self.bonus_factory.rotation / 30.;
-                }
+                self.bonus_factory.update(seconds);
 
                 // Bonus text
                 {
@@ -315,21 +301,16 @@ impl event::EventHandler for MainState {
                     quick_draw(ctx, &self.bonuses_text[i].text, a, &self.screen)?;
                 }
             }
-            Scene::Credits => {}
+            Scene::Credits => {
+                transparent_layer(ctx, &self.screen)?;
+                for i in 0..self.assets.credits.len() {
+                    quick_draw(ctx, &self.assets.credits[i], (0., 0.3 + i as f64 / -15.), &self.screen)?;
+                }
+            }
 
             // Intro Scene
             Scene::Intro => {
-                graphics::set_color(ctx, graphics::Color::new(0., 0., 0., 0.75))?;
-                let center = self.screen.position_to_pixel(Vector2::new(0., 0.));
-                let size = self.screen.size_to_pixel(Vector2::new(1., 1.));
-                let rect = graphics::Rect::new(
-                    center.x as f32,
-                    center.y as f32,
-                    size.x as f32,
-                    size.y as f32,
-                );
-                graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
-                graphics::set_color(ctx, (255, 255, 255).into())?;
+                transparent_layer(ctx, &self.screen)?;
 
                 for i in 0..self.assets.instructions_p1.len() {
                     quick_draw(ctx, &self.assets.instructions_p1[i], (-0.15, 0.1 + i as f64 / -15.), &self.screen)?;
@@ -339,6 +320,8 @@ impl event::EventHandler for MainState {
                 quick_draw(ctx, &self.assets.authors,(0., 0.3), &self.screen)?;
                 quick_draw(ctx, &self.assets.single, (0., -0.4), &self.screen)?;
             }
+
+            
         }
 
         graphics::present(ctx);

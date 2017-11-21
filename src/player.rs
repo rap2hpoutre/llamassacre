@@ -4,7 +4,6 @@ use animation::PlayerAnimation;
 use bonus::Mutation;
 use assets::Assets;
 use ggez::{Context, GameResult};
-use ggez::audio;
 use helpers;
 use display::Screen;
 use ggez::graphics;
@@ -85,9 +84,9 @@ impl Player {
             ..Default::default()
         };
         if max_velocity.x == 0. {
-            graphics::set_color(ctx, graphics::Color::new(0.3, 0.4, 0.8, 0.9))?;
+            graphics::set_color(ctx, (200, 200, 255).into())?;
         } else if max_velocity.x > initial_max_velocity.x {
-            graphics::set_color(ctx, graphics::Color::new(1., 0.5, 0.5, 1.))?;
+            graphics::set_color(ctx, (255, 200, 200).into())?;
         }
         graphics::draw_ex(ctx, player_image, draw_param)?;
 

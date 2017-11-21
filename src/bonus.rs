@@ -127,13 +127,13 @@ impl Bonus {
                 None
             }
             BonusType::Velocity2 => Some(Mutation {
-                duration: 5.,
+                duration: 7.5,
                 size_factor: 1.,
                 velocity_factor: Vector2::new(2., 1.5),
                 active: true,
             }),
             BonusType::Freeze => Some(Mutation {
-                duration: 1.,
+                duration: 2.,
                 size_factor: 1.,
                 velocity_factor: Vector2::new(0., 0.),
                 active: true,
@@ -165,13 +165,13 @@ impl Factory {
         let image = graphics::Image::new(ctx, "/divin2.png")?;
         let alt_image = graphics::Image::new(ctx, "/divin1.png")?;
         Ok(Self {
-            cooldown: 15.,
+            cooldown: 20.,
             image: image,
             alt_image_cooldown: 0.,
             alt_image: alt_image,
             position: Vector2::new(0., 1.1),
             size: Vector2::new(0.1, 0.1),
-            velocity: Vector2::new(0.1, 0.0),
+            velocity: Vector2::new(0.15, 0.0),
             rotation: 0.,
             rotation_velocity: -1.,
         })
@@ -213,6 +213,29 @@ impl Factory {
 
     fn cooldown() -> f64 {
         thread_rng().gen_range(0., 30.)
+    }
+
+    pub fn update(&mut self, seconds: f64) {
+        if self.position.y > 0.3 {
+            self.position.y -= seconds / 50.;
+        } else {
+            self.position.y = 0.3;
+            self.position += self.velocity * seconds;
+            if self.position.x > 1.7 || self.position.x < -1.7 {
+                self.velocity.x *= thread_rng().gen_range(-1.2, -0.7);
+                self.rotation = 0.;
+                match thread_rng().gen_range(0, 3) {
+                    0 => {                        
+                        self.rotation_velocity = 0.;
+                    },
+                    _ => {
+                        self.rotation_velocity = thread_rng().gen_range(-1.5, -0.5);
+                    },
+                };
+            }
+        }
+        self.rotation += seconds as f32 * self.rotation_velocity;
+        self.rotation_velocity -= self.rotation / 30.;
     }
 }
 

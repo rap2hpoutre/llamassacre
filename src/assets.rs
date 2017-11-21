@@ -14,6 +14,7 @@ pub struct Assets {
     pub single: graphics::Text,
     pub instructions_p1: Vec<graphics::Text>,
     pub instructions_p2: Vec<graphics::Text>,
+    pub credits: Vec<graphics::Text>,
     pub jump: Vec<audio::Source>,
     pub death: audio::Source,
     pub take_bonus: audio::Source,
@@ -39,11 +40,19 @@ impl Assets {
             graphics::Text::new(ctx, "left: left", &font_small)?,
             graphics::Text::new(ctx, "right: right", &font_small)?,
         ];
+        let credits = vec![
+            graphics::Text::new(ctx, "Artwork & design: iorekb", &font_small)?,
+            graphics::Text::new(ctx, "Prog & design: rap2h", &font_small)?,
+            graphics::Text::new(ctx, "Game engine: ggez", &font_small)?,
+            graphics::Text::new(ctx, "Font: TravelingTypewriter", &font_small)?,
+            graphics::Text::new(ctx, "Sounds plundered on freesound.org", &font_small)?,
+            graphics::Text::new(ctx, "Artwork highly inspired by various artists", &font_small)?,
+        ];
         let jump = audio::Source::new(ctx, "/jump.ogg")?;
         let jump2 = audio::Source::new(ctx, "/jump.ogg")?;
         let take_bonus = audio::Source::new(ctx, "/bonus.wav")?;
         let death = audio::Source::new(ctx, "/death.ogg")?;
-        let mut bg = graphics::Image::new(ctx, "/bg8.png")?;
+        let mut bg = graphics::Image::new(ctx, "/bg10.png")?;
         let shadow = graphics::Image::new(ctx, "/shadow2.png")?;
         bg.set_filter(graphics::FilterMode::Nearest);
         let s = Assets {
@@ -60,6 +69,7 @@ impl Assets {
             instructions_p2: instructions_p2,
             shadow: shadow,
             single: single,
+            credits: credits
         };
         Ok(s)
     }
