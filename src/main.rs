@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"]
 extern crate cgmath;
 extern crate ggez;
 extern crate rand;
@@ -147,8 +148,13 @@ impl event::EventHandler for MainState {
                 {
                     // Spawn
                     match self.bonus_factory.spawn(ctx, dt)? {
-                        Some(bonus) => self.bonuses.push(bonus),
-                        None => {}
+                        Some(bonuses) => {
+                            for bonus in bonuses {
+                                self.bonuses.push(bonus);
+                            }
+                            
+                        }
+                        None => ()
                     }
                     // Move
                     for bonus in &mut self.bonuses {
@@ -185,11 +191,13 @@ impl event::EventHandler for MainState {
                             let distance =
                                 self.players[i].position.distance(self.players[j].position);
                             if distance < cbox_size.x {
+                                println!("{}", distance);
                                 // This part should be updated.
                                 // It seems cbox_size.y is never used nowhere.
                                 // It must be used for better collisions.
                                 let pos_y_i = self.players[i].position.y;
                                 let pos_y_j = self.players[j].position.y;
+                                println!("i{} j{}", pos_y_i, pos_y_j);
                                 let (frag, killer, victim) =
                                     if pos_y_i > pos_y_j && self.players[i].velocity.y < 0. {
                                         (true, Some(i), Some(j))

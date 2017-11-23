@@ -21,7 +21,6 @@ impl Screen {
         };
         let view_width = (cell_size * Screen::RATIO.0 as f32) as u32;
         let view_height = (cell_size * Screen::RATIO.1 as f32) as u32;
-        println!("View size: {} {}", view_width, view_height);
         Screen {
             view_width: view_width,
             view_height: view_height,

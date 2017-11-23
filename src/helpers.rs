@@ -106,7 +106,6 @@ pub fn kill(players: &mut [Player; 2], killer_index: usize, victim_index: usize)
     players[killer_index].score += 1;
     players[killer_index].velocity.y *= -1.0;
     players[victim_index].position = random_position();
-    println!("{} killed {}", killer_index, victim_index);
 }
 
 pub fn score_text(

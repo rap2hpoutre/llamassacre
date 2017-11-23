@@ -177,13 +177,23 @@ impl Factory {
         })
     }
 
-    pub fn spawn(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<Option<Bonus>> {
+    pub fn spawn(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<Option<Vec<Bonus>>> {
         self.cooldown -= timer::duration_to_f64(dt);
         self.alt_image_cooldown -= timer::duration_to_f64(dt);
         if self.cooldown < 0. && self.position.x < 0.4 && self.position.x > -0.4 {
             self.alt_image_cooldown = 1.;
             self.cooldown = Self::cooldown();
-            return Ok(Some(Bonus::random(ctx, Some(self.position))?));
+            if random::<f64>() < 0.2 {
+                let bonus_count = thread_rng().gen_range(3, 5);
+                let mut r = vec![];
+                for _ in 0..bonus_count {
+                    r.push(Bonus::random(ctx, Some(self.position))?);
+                }
+                return Ok(Some(r));
+            } else {
+                return Ok(Some(vec![Bonus::random(ctx, Some(self.position))?]));
+            }
+            
         }
         Ok(None)
     }
@@ -212,7 +222,7 @@ impl Factory {
     }
 
     fn cooldown() -> f64 {
-        thread_rng().gen_range(0., 30.)
+        thread_rng().gen_range(2., 30.)
     }
 
     pub fn update(&mut self, seconds: f64) {
@@ -221,8 +231,11 @@ impl Factory {
         } else {
             self.position.y = 0.3;
             self.position += self.velocity * seconds;
-            if self.position.x > 1.7 || self.position.x < -1.7 {
-                self.velocity.x *= thread_rng().gen_range(-1.2, -0.7);
+            if self.position.x > 1.5 || self.position.x < -1.5 {
+                self.velocity.x *= thread_rng().gen_range(-1.15, -0.95);
+                if self.velocity.x.abs() > 0.4 {
+                    self.velocity.x /= 2.
+                } 
                 self.rotation = 0.;
                 match thread_rng().gen_range(0, 3) {
                     0 => {                        

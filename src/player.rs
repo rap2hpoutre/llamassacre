@@ -135,7 +135,6 @@ impl Player {
         } else {
             self.velocity.y = seconds * max_velocity.y * self.input_axis.y;
             if self.input_axis.y != 0.0 && max_velocity.y > 0. {
-                println!("jump");
                 match self.tag {
                     PlayerType::Player1 => assets.jump[0].play()?,
                     PlayerType::Player2 => assets.jump[1].play()?,
