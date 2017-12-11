@@ -13,6 +13,8 @@ pub enum BonusType {
     GiveFivePoint,
     Velocity2,
     Freeze,
+    Reverse,
+    Enlarge,
 }
 
 pub struct Bonus {
@@ -47,11 +49,13 @@ impl Bonus {
     }
 
     fn random_type() -> BonusType {
-        match thread_rng().gen_range(0, 4) {
-            0 => BonusType::GiveOnePoint,
-            1 => BonusType::GiveFivePoint,
-            2 => BonusType::Velocity2,
-            3 => BonusType::Freeze,
+        match thread_rng().gen_range(0, 10) {
+            0 | 1 | 9 => BonusType::GiveOnePoint,
+            2 => BonusType::GiveFivePoint,
+            3 | 4 | 5 => BonusType::Velocity2,
+            6 => BonusType::Freeze,
+            7 => BonusType::Enlarge,
+            8 => BonusType::Reverse,
             _ => unreachable!(),
         }
     }
@@ -65,29 +69,15 @@ impl Bonus {
     }
 
     fn image_by_tag(ctx: &mut Context, b: &BonusType) -> GameResult<graphics::Image> {
-        Ok(match b {
-            &BonusType::GiveOnePoint => {
-                let mut a = graphics::Image::new(ctx, "/bonus_1.png")?;
-                a.set_filter(graphics::FilterMode::Nearest);
-                a
-            }
-            &BonusType::GiveFivePoint => {
-                let mut a = graphics::Image::new(ctx, "/bonus_0.png")?;
-                a.set_filter(graphics::FilterMode::Nearest);
-                a
-            }
-
-            &BonusType::Velocity2 => {
-                let mut a = graphics::Image::new(ctx, "/bonus_2.png")?;
-                a.set_filter(graphics::FilterMode::Nearest);
-                a
-            }
-            &BonusType::Freeze => {
-                let mut a = graphics::Image::new(ctx, "/bonus_3.png")?;
-                a.set_filter(graphics::FilterMode::Nearest);
-                a
-            }
-        })
+        let asset = match b {
+            &BonusType::GiveOnePoint => "/bonus_1.png",
+            &BonusType::GiveFivePoint => "/bonus_0.png",
+            &BonusType::Velocity2 => "/bonus_2.png",
+            &BonusType::Freeze | &BonusType::Enlarge | &BonusType::Reverse => "/bonus_3.png",
+        };
+        let mut a = graphics::Image::new(ctx, asset)?;
+        a.set_filter(graphics::FilterMode::Nearest);
+        Ok(a)
     }
 
 
@@ -97,6 +87,8 @@ impl Bonus {
             &BonusType::GiveFivePoint => "score +5",
             &BonusType::Velocity2 => "speed x2",
             &BonusType::Freeze => "freeze",
+            &BonusType::Enlarge => "size x2",
+            &BonusType::Reverse => "reverse",
         }.to_string()
     }
 
@@ -136,6 +128,18 @@ impl Bonus {
                 duration: 2.,
                 size_factor: 1.,
                 velocity_factor: Vector2::new(0., 0.),
+                active: true,
+            }),
+            BonusType::Enlarge => Some(Mutation {
+                duration: 5.,
+                size_factor: 1.5,
+                velocity_factor: Vector2::new(1., 1.),
+                active: true,
+            }),
+            BonusType::Reverse => Some(Mutation {
+                duration: 7.5,
+                size_factor: 1.,
+                velocity_factor: Vector2::new(-1., 1.),
                 active: true,
             }),
         }
@@ -184,7 +188,7 @@ impl Factory {
             self.alt_image_cooldown = 1.;
             self.cooldown = Self::cooldown();
             if random::<f64>() < 0.2 {
-                let bonus_count = thread_rng().gen_range(3, 5);
+                let bonus_count = thread_rng().gen_range(3, 7);
                 let mut r = vec![];
                 for _ in 0..bonus_count {
                     r.push(Bonus::random(ctx, Some(self.position))?);
@@ -193,7 +197,6 @@ impl Factory {
             } else {
                 return Ok(Some(vec![Bonus::random(ctx, Some(self.position))?]));
             }
-            
         }
         Ok(None)
     }
@@ -206,7 +209,7 @@ impl Factory {
         } else {
             &self.alt_image
         };
-        
+
         let dest = helpers::point_from_position(position, screen);
         let draw_param = graphics::DrawParam {
             dest: dest,
@@ -222,7 +225,7 @@ impl Factory {
     }
 
     fn cooldown() -> f64 {
-        thread_rng().gen_range(2., 30.)
+        thread_rng().gen_range(2., 20.)
     }
 
     pub fn update(&mut self, seconds: f64) {
@@ -235,15 +238,15 @@ impl Factory {
                 self.velocity.x *= thread_rng().gen_range(-1.15, -0.95);
                 if self.velocity.x.abs() > 0.4 {
                     self.velocity.x /= 2.
-                } 
+                }
                 self.rotation = 0.;
                 match thread_rng().gen_range(0, 3) {
-                    0 => {                        
+                    0 => {
                         self.rotation_velocity = 0.;
-                    },
+                    }
                     _ => {
                         self.rotation_velocity = thread_rng().gen_range(-1.5, -0.5);
-                    },
+                    }
                 };
             }
         }

@@ -25,7 +25,7 @@ impl Assets {
         let font = graphics::Font::new(ctx, "/TravelingTypewriter.ttf", 18)?;
         let font_small = graphics::Font::new(ctx, "/TravelingTypewriter.ttf", 12)?;
         let blood = graphics::Image::new(ctx, "/blood.png")?;
-        let title = graphics::Text::new(ctx, "SQUEEZE LLAMA", &font)?;
+        let title = graphics::Text::new(ctx, "LLAMASSACRE", &font)?;
         let authors = graphics::Text::new(ctx, "press SPACE to start, C for credits", &font_small)?;
         let single = graphics::Text::new(ctx, "single player? press ESC to quit", &font_small)?;
         let instructions_p1 = vec![
@@ -42,7 +42,7 @@ impl Assets {
         ];
         let credits = vec![
             graphics::Text::new(ctx, "Artwork & design: iorekb", &font_small)?,
-            graphics::Text::new(ctx, "Prog & design: rap2h", &font_small)?,
+            graphics::Text::new(ctx, "Prog, artwork & design: rap2h", &font_small)?,
             graphics::Text::new(ctx, "Game engine: ggez", &font_small)?,
             graphics::Text::new(ctx, "Font: TravelingTypewriter", &font_small)?,
             graphics::Text::new(ctx, "Sounds plundered on freesound.org", &font_small)?,

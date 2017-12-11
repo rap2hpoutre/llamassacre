@@ -28,6 +28,7 @@ pub enum PlayerType {
 pub struct Player {
     pub tag: PlayerType,
     pub position: Vector2<f64>,
+    pub previous_position: Vector2<f64>,
     pub facing: Facing,
     pub size: Vector2<f64>,
     pub cbox_size: Vector2<f64>,
@@ -53,6 +54,7 @@ impl Player {
         Player {
             tag: tag,
             position: position,
+            previous_position: position,
             facing: facing,
             size: Vector2::new(0.1, 0.1),
             cbox_size: Vector2::new(0.055, 0.075),
@@ -74,7 +76,7 @@ impl Player {
         }
         let initial_max_velocity = self.max_velocity;
         let max_velocity = self.max_velocity_mutated();
-        position.y += (size.y - self.size.y) / 1.5;
+        position.y += (size.y - self.size.y) / 1.33; // WHY?!
         let dest = helpers::point_from_position(position, screen);
         let player_image = helpers::player_image(self);
         let scale = helpers::scale(size, screen, player_image);
@@ -139,9 +141,10 @@ impl Player {
                     PlayerType::Player1 => assets.jump[0].play()?,
                     PlayerType::Player2 => assets.jump[1].play()?,
                 };
-;
             }
         }
+
+        self.previous_position = self.position;
 
         self.position.x += self.velocity.x;
         self.position.y += self.velocity.y;

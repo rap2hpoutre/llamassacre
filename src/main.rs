@@ -191,13 +191,11 @@ impl event::EventHandler for MainState {
                             let distance =
                                 self.players[i].position.distance(self.players[j].position);
                             if distance < cbox_size.x {
-                                println!("{}", distance);
                                 // This part should be updated.
                                 // It seems cbox_size.y is never used nowhere.
                                 // It must be used for better collisions.
-                                let pos_y_i = self.players[i].position.y;
-                                let pos_y_j = self.players[j].position.y;
-                                println!("i{} j{}", pos_y_i, pos_y_j);
+                                let pos_y_i = self.players[i].previous_position.y;
+                                let pos_y_j = self.players[j].previous_position.y;
                                 let (frag, killer, victim) =
                                     if pos_y_i > pos_y_j && self.players[i].velocity.y < 0. {
                                         (true, Some(i), Some(j))
@@ -379,14 +377,14 @@ impl event::EventHandler for MainState {
 
 pub fn main() {
     let mut c = conf::Conf::new();
-    c.window_title = "Squeeze Llama".to_string();
+    c.window_title = "Llamassacre".to_string();
     c.window_width = Screen::WIDTH;
     c.window_height = Screen::HEIGHT;
-    let ctx = &mut Context::load_from_conf("Squeeze Llama", "ggez", c).unwrap();
+    let ctx = &mut Context::load_from_conf("Llamassacre", "ggez", c).unwrap();
     let state = &mut MainState::new(ctx).unwrap();
     if let Err(e) = event::run(ctx, state) {
-        println!("Error encountered: {}", e);
+        println!("Oops. Error encountered: {}", e);
     } else {
-        println!("Game exited cleanly.");
+        println!("Great. Game exited cleanly.");
     }
 }
